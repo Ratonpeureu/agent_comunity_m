@@ -1,0 +1,85 @@
+// src/pages/social/Ideas.tsx
+import React, { useState } from 'react'
+import { errMsg, Idea, Platform, pmeta, prettify, social } from '../../lib/social'
+import { Badge, Empty, Field, Loading, Modal, PageHead, PlatformDot, PlatformPicker, Pills, Switch, useLoad, useSocial } from './ui'
+
+const OBJ: Record<string, string> = { notoriete: 'Notoriété', engagement: 'Engagement', conversion: 'Conversion', autorite: 'Autorité' }
+
+export function Ideas() {
+  const { tick, runJob, ok, err } = useSocial()
+  const [statut, setStatut] = useState('propose')
+  const [gen, setGen] = useState(false)
+  const [writing, setWriting] = useState<Idea | null>(null)
+  const { data, loading, reload } = useLoad(() => social.ideas(statut), [statut, tick])
+
+  const patch = async (i: Idea, s: string) => {
+    let motif: string | undefined
+    if (s === 'rejete') { const m = window.prompt('Pourquoi rejeter cette idée ? (aide l\'IA à mieux cibler)'); if (m === null) return; motif = m }
+    try { await social.patchIdea(i.id, { statut: s, motif_rejet: motif }); ok(s === 'rejete' ? 'Idée rejetée' : 'Idée acceptée'); reload() } catch (e) { err(errMsg(e)) }
+  }
+
+  return (
+    <div>
+      <PageHead title="Idées de publications" sub="Basées sur ton identité, les actualités du secteur, tes stats et tes captures disponibles.">
+        <button className="sm-btn pri" onClick={() => setGen(true)}>✨ Générer des idées</button>
+      </PageHead>
+      <Pills items={[{ id: 'propose', label: 'Proposées' }, { id: 'accepte', label: 'Acceptées' }, { id: 'redige', label: 'Rédigées' }, { id: 'rejete', label: 'Rejetées' }]} value={statut} onChange={setStatut} />
+
+      {loading && !data ? <Loading /> : !data?.length ? <Empty title="Aucune idée ici">Clique sur « Générer des idées » : l'agent en propose une dizaine, dédoublonnées.</Empty> : (
+        <div className="sm-auto" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))' }}>
+          {data.map(i => (
+            <div className="sm-idea" key={i.id}>
+              <div className="sm-row">
+                <Badge tone="violet">{prettify(i.pilier) || 'Libre'}</Badge><Badge tone="blue">{OBJ[i.objectif] || i.objectif}</Badge>
+                <Badge>{prettify(i.format_conseille)}</Badge>{i.urgence === 'actualite' && <Badge tone="amber">Actualité</Badge>}
+              </div>
+              <h4>{i.titre}</h4>
+              <p className="sm-mut">{i.angle}</p>
+              {i.accroche && <div className="acc">« {i.accroche} »</div>}
+              <details><summary className="sm-xs sm-mut" style={{ cursor: 'pointer' }}>Pourquoi cette idée</summary><p className="sm-xs sm-mt">{i.justification}</p>
+                {i.source_tendance_url && <a className="sm-xs" href={i.source_tendance_url} target="_blank" rel="noreferrer">Source de l'actualité ↗</a>}</details>
+              <div className="sm-row">
+                <div className="sm-chips">{i.plateformes.map(p => <PlatformDot key={p} p={p} />)}</div>
+                <span className="sm-flex1" />
+                <span className="sm-xs sm-mut" title="Potentiel estimé par l'IA">Potentiel {Math.round(i.score_potentiel)}/100</span>
+              </div>
+              <div className="act">
+                <button className="sm-btn pri xs" onClick={() => setWriting(i)}>Rédiger les posts</button>
+                {i.statut === 'propose' && <button className="sm-btn xs" onClick={() => patch(i, 'accepte')}>Accepter</button>}
+                {i.statut !== 'rejete' && <button className="sm-btn danger xs" onClick={() => patch(i, 'rejete')}>Rejeter</button>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {gen && <GenerateModal onClose={() => setGen(false)} onGo={(b) => { setGen(false); runJob('Génération d\'idées', () => social.genIdeas(b)) }} />}
+      {writing && <WriteModal idea={writing} onClose={() => setWriting(null)} onGo={(pl, ins) => { const id = writing.id; setWriting(null); runJob('Rédaction des posts', () => social.writeIdea(id, pl, ins)).then(r => { if (r?.posts_crees) ok(`${r.posts_crees} post(s) créé(s) — onglet Posts › À valider`) }) }} />}
+    </div>
+  )
+}
+
+function GenerateModal({ onClose, onGo }: { onClose: () => void; onGo: (b: { nb: number; thematique?: string; avec_tendances: boolean }) => void }) {
+  const [nb, setNb] = useState(8); const [th, setTh] = useState(''); const [tr, setTr] = useState(true)
+  return (
+    <Modal title="Générer des idées" onClose={onClose} footer={<><button className="sm-btn" onClick={onClose}>Annuler</button><button className="sm-btn pri" onClick={() => onGo({ nb, thematique: th || undefined, avec_tendances: tr })}>Générer</button></>}>
+      <Field label="Nombre d'idées"><input className="sm-input" type="number" min={3} max={15} value={nb} onChange={e => setNb(+e.target.value)} /></Field>
+      <Field label="Thématique imposée (optionnel)" hint="Ex : « paie de fin de mois », « rentrée scolaire », « nouveau module congés »"><input className="sm-input" value={th} onChange={e => setTh(e.target.value)} /></Field>
+      <Switch checked={tr} onChange={setTr} label="S'inspirer des actualités du secteur (Serper)" />
+    </Modal>
+  )
+}
+
+function WriteModal({ idea, onClose, onGo }: { idea: Idea; onClose: () => void; onGo: (pl: string[], ins: string) => void }) {
+  const [pl, setPl] = useState<string[]>(idea.plateformes || [])
+  const [ins, setIns] = useState('')
+  return (
+    <Modal title={`Rédiger : ${idea.titre}`} onClose={onClose} footer={<><button className="sm-btn" onClick={onClose}>Annuler</button><button className="sm-btn pri" disabled={!pl.length} onClick={() => onGo(pl, ins)}>Rédiger {pl.length} version(s)</button></>}>
+      <Field label="Plateformes" hint="Une version native est écrite pour chaque réseau, avec son visuel et son créneau optimal."><PlatformPicker value={pl} onChange={setPl} /></Field>
+      <Field label="Instruction spéciale (optionnel)" hint="Ex : « ton plus décontracté », « insiste sur le gain de temps », « mentionne la signature électronique »">
+        <textarea className="sm-textarea" value={ins} onChange={e => setIns(e.target.value)} />
+      </Field>
+      <p className="sm-hint">{pl.map(p => pmeta(p).label).join(' · ')}</p>
+    </Modal>
+  )
+}
