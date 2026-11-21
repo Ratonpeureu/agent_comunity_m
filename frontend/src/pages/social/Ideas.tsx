@@ -21,7 +21,7 @@ export function Ideas() {
   return (
     <div>
       <PageHead title="Idées de publications" sub="Basées sur ton identité, les actualités du secteur, tes stats et tes captures disponibles.">
-        <button className="sm-btn pri" onClick={() => setGen(true)}>✨ Générer des idées</button>
+        <button className="sm-btn pri" onClick={() => setGen(true)}>Générer des idées</button>
       </PageHead>
       <Pills items={[{ id: 'propose', label: 'Proposées' }, { id: 'accepte', label: 'Acceptées' }, { id: 'redige', label: 'Rédigées' }, { id: 'rejete', label: 'Rejetées' }]} value={statut} onChange={setStatut} />
 

@@ -1,20 +1,68 @@
-/* Correctifs de mise en page de la fenêtre « Post » */
+/* Thème sobre : s'applique à toute l'application */
+body{background:#f7f8fa;font-family:Inter,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.app-top{background:#fff;border-bottom:1px solid #e6e8ee;padding:10px 24px}
+.app-logo{width:26px;height:26px;border-radius:7px;background:#12151c;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.app-brand{font-size:14px;letter-spacing:-.1px}
+.app-link{color:#3d4560;font-weight:500;font-size:13px}
+.app-out{border-radius:7px;font-weight:500;font-size:13px}
+.lg-card{border-radius:12px}.lg-card button{background:#12151c;border-radius:8px}
+
+.sm{--bg:#f7f8fa;--line:#e6e8ee;--txt:#12151c;--mut:#667085;--pri:#12151c;--pri2:#000;--pril:#eef0f5;--vio:#4338ca;--viol:#eef0ff}
+.sm-title{font-size:20px;font-weight:700;letter-spacing:-.4px}
+.sm-card,.sm-stat,.sm-idea,.sm-post,.sm-asset,.mm-card,.sm-pv{border-radius:10px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.sm-card-h h3{font-size:14px}
+.sm-btn{border-radius:8px;font-weight:500;padding:8px 14px}
+.sm-btn.pri{background:#12151c;border-color:#12151c}.sm-btn.pri:hover{background:#2b3242}
+.sm-btn.ok{background:#0f766e;border-color:#0f766e}
+.sm-input,.sm-select,.sm-textarea{border-radius:8px}
+.sm-input:focus,.sm-select:focus,.sm-textarea:focus,.sm-tags:focus-within{border-color:#12151c;box-shadow:0 0 0 3px rgba(18,21,28,.08)}
+.sm-tabs{gap:0;margin-bottom:24px}
+.sm-tab{padding:11px 14px;font-weight:500;font-size:13.5px}
+.sm-tab.active{color:#12151c;border-color:#12151c}
+.sm-pills{gap:4px;margin-bottom:18px}
+.sm-pill{border-radius:8px;padding:6px 12px;font-weight:500;font-size:13px;background:#fff}
+.sm-pill.on{background:#12151c;border-color:#12151c;color:#fff}
+.sm-chip.pl.on{background:#12151c}
+.sm-switch input:checked+span{background:#12151c}
+.sm-progress i,.sm-barrow .b i{background:#12151c}
+.sm-badge{border-radius:6px;font-weight:600}
+.sm-toast{border-radius:8px}.sm-job{border-radius:10px}
+
+/* Fenêtre d'édition */
+.sm .sm-modal{border-radius:14px}
+.sm .sm-modal.wide{width:min(1240px,96vw);max-width:none;height:min(92vh,900px)}
+.sm .sm-modal-b{padding:22px;overflow:auto}
+.sm .sm-modal-f{gap:8px;align-items:center;position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line)}
 .sm .sm-sticky{position:static}
 .sm .sm-split>*{min-width:0}
-.sm .sm-modal.wide{width:min(1180px,96vw);max-width:none}
-.sm .sm-modal-f{gap:8px;align-items:center}
-.sm .sm-pv-m{max-height:420px}
+.sm .sm-pv-m{max-height:380px}
 
-.sm .pe-tpls{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;margin-bottom:14px}
-.sm .pe-tpl{display:flex;flex-direction:column;gap:2px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 10px;cursor:pointer;font-size:11.5px;color:var(--mut)}
-.sm .pe-tpl b{color:var(--txt);font-size:13px}
-.sm .pe-tpl:hover{border-color:var(--pri)}
-.sm .pe-tpl.on{border-color:var(--pri);background:var(--pril);box-shadow:0 0 0 2px var(--pril)}
-.sm .pe-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-@media(max-width:620px){.sm .pe-actions{grid-template-columns:1fr}}
-.sm .pe-big{padding:12px 14px;font-size:14px}
-.sm .pe-warn{background:var(--warnl);color:var(--warn);border-radius:10px;padding:8px 12px;margin-top:10px;font-size:12.5px}
-.sm .pe-busy{display:flex;align-items:center;gap:10px;background:var(--pril);color:var(--pri2);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-weight:600}
-.sm .ac-tabs{display:flex;gap:6px;margin-bottom:12px}
-.sm .ac-steps{padding-left:18px;margin:0 0 12px;color:var(--mut);font-size:12.5px}
+.sm .pe-layout{display:grid;grid-template-columns:minmax(300px,400px) minmax(0,1fr);gap:28px;align-items:start}
+@media(max-width:960px){.sm .pe-layout{grid-template-columns:1fr}}
+.sm .pe-side{position:sticky;top:0;align-self:start;min-width:0}
+@media(max-width:960px){.sm .pe-side{position:static}}
+.sm .pe-main{min-width:0}
+.sm .pe-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;background:#f7f8fa;border:1px solid var(--line);border-radius:10px;margin-bottom:16px}
+.sm .pe-tpls{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0 16px}
+.sm .pe-tpl{display:flex;flex-direction:column;gap:3px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:9px;padding:10px 11px;cursor:pointer;font-size:11.5px;color:var(--mut)}
+.sm .pe-tpl b{color:var(--txt);font-size:13px;font-weight:600}
+.sm .pe-tpl:hover{border-color:#9aa3b8}
+.sm .pe-tpl.on{border-color:#12151c;background:#f3f4f8;box-shadow:0 0 0 1px #12151c}
+.sm .pe-opts{display:flex;flex-direction:column;gap:14px}
+.sm .pe-thumb{width:84px;height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.sm .pe-big{padding:9px 18px;font-size:13.5px}
+.sm .pe-warn{background:var(--warnl);color:var(--warn);border-radius:8px;padding:9px 12px;margin:10px 0;font-size:12.5px}
+.sm .pe-busy{display:flex;align-items:center;gap:10px;background:#eef0f5;color:#12151c;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-weight:600}
+
+/* Comptes */
+.sm .ac-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px;align-items:start}
+@media(max-width:520px){.sm .ac-grid{grid-template-columns:1fr}}
+.sm .ac-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.sm .ac-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.sm .ac-head h3{font-size:15px;font-weight:700}
+.sm .ac-steps{padding-left:18px;margin:0 0 14px;color:var(--mut);font-size:12.5px}
 .sm .ac-steps li{margin-bottom:4px}
+.sm .ac-form{border-top:1px solid var(--line);padding-top:14px}
+.sm .ac-foot{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.sm .ac-tabs{display:flex;gap:6px;margin-bottom:12px}
+.sm .ac-adv summary{cursor:pointer;font-weight:600;font-size:13px;margin-bottom:10px}

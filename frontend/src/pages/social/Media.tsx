@@ -80,7 +80,7 @@ export function Media() {
           <Stat label="Montages / vidéos" value={`${counts.montage || 0} / ${counts.video || 0}`} hint={`${counts.audio || 0} pistes audio`} />
         </div>
       )}
-      {d && d.orphelins > 0 && <div className="sm-note">⚠ {d.orphelins} fiche(s) YAML sans fichier image dans <code>{d.assets_dir}</code> : le dossier <code>data</code> n'est probablement pas partagé entre api et worker.</div>}
+      {d && d.orphelins > 0 && <div className="sm-note">{d.orphelins} fiche(s) YAML sans fichier image dans <code>{d.assets_dir}</code> : le dossier <code>data</code> n'est probablement pas partagé entre api et worker.</div>}
       <div className="sm-row sm-mb">
         <input className="sm-input" style={{ maxWidth: 340 }} placeholder="Rechercher (titre, module, hashtag…)" value={q} onChange={e => setQ(e.target.value)} />
         <div className="sm-chips">

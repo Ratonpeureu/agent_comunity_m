@@ -1,4 +1,9 @@
 import os
+
+from agent.bootstrap import load_config
+
+load_config()        # le PORT saisi dans /setup est lu ici, avant le démarrage d'uvicorn
+
 import uvicorn
 
 if __name__ == "__main__":

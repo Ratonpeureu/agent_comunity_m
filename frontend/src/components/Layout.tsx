@@ -7,9 +7,10 @@ export function Layout() {
   return (
     <div className="app-shell">
       <header className="app-top">
-        <b className="app-brand">📣 Agent Social</b>
+        <span className="app-logo">S</span>
+        <b className="app-brand">Agent Social</b>
         <span className="app-flex" />
-        <a className="app-link" href="/setup" target="_blank" rel="noreferrer">⚙ Réglages</a>
+        <a className="app-link" href="/setup" target="_blank" rel="noreferrer">Configuration</a>
         <span className="app-user">{username}</span>
         <button className="app-out" onClick={logout}>Déconnexion</button>
       </header>

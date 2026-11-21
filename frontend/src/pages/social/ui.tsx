@@ -292,7 +292,7 @@ export function AuthImg({ path, alt = '', className, style }: { path: string; al
   }, [vis, src, bad, path])
 
   if (src) return <img src={src} alt={alt} className={className} style={style} />
-  return <div ref={ref} className={`sm-imgph ${className || ''}`} style={style}>{bad ? '⚠' : <Spinner />}</div>
+  return <div ref={ref} className={`sm-imgph ${className || ''}`} style={style}>{bad ? '' : <Spinner />}</div>
 }
 
 export async function copyText(t: string): Promise<boolean> {

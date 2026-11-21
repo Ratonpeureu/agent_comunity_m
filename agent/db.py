@@ -8,6 +8,7 @@ from typing import List, Optional
 import sqlalchemy as sa
 from sqlalchemy import JSON, Column, LargeBinary, Text, UniqueConstraint, event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from pydantic import NaiveDatetime
 from sqlmodel import Field, SQLModel
 
 DATA_DIR = os.getenv("DATA_DIR", "/data")
@@ -62,9 +63,9 @@ class SocialBrand(SQLModel, table=True):
     config: dict = Field(default={}, sa_column=Column(JSON))
     statut_analyse: str = Field(default="non_analyse")
     erreur_analyse: Optional[str] = Field(default=None, sa_column=Column(Text))
-    derniere_analyse: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    derniere_analyse: Optional[NaiveDatetime] = None
+    created_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
+    updated_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
 
 
 class SocialStyleSample(SQLModel, table=True):
@@ -76,7 +77,7 @@ class SocialStyleSample(SQLModel, table=True):
     source: str = Field(default="manuel")
     poids: float = Field(default=1.0)
     texte_hash: str = Field(default="", index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
 
 
 class SocialAccount(SQLModel, table=True):
@@ -89,11 +90,11 @@ class SocialAccount(SQLModel, table=True):
     identifiant_externe: Optional[str] = None
     credentials_chiffrees: bytes = Field(sa_column=Column(LargeBinary))
     statut: str = Field(default="actif")
-    expire_le: Optional[datetime] = None
-    derniere_verification: Optional[datetime] = None
+    expire_le: Optional[NaiveDatetime] = None
+    derniere_verification: Optional[NaiveDatetime] = None
     derniere_erreur: Optional[str] = Field(default=None, sa_column=Column(Text))
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
+    updated_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
 
 
 class SocialIdea(SQLModel, table=True):
@@ -113,7 +114,7 @@ class SocialIdea(SQLModel, table=True):
     score_potentiel: float = Field(default=50.0)
     statut: str = Field(default="propose", index=True)
     motif_rejet: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
 
 
 class SocialPost(SQLModel, table=True):
@@ -135,8 +136,8 @@ class SocialPost(SQLModel, table=True):
     visuel_spec: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     script_video: Optional[str] = Field(default=None, sa_column=Column(Text))
     statut: str = Field(default="brouillon", index=True)
-    scheduled_at: Optional[datetime] = Field(default=None, index=True)
-    published_at: Optional[datetime] = Field(default=None, index=True)
+    scheduled_at: Optional[NaiveDatetime] = Field(default=None, index=True)
+    published_at: Optional[NaiveDatetime] = Field(default=None, index=True)
     external_id: Optional[str] = None
     external_url: Optional[str] = None
     prediction: Optional[dict] = Field(default=None, sa_column=Column(JSON))
@@ -145,10 +146,10 @@ class SocialPost(SQLModel, table=True):
     nb_tentatives: int = Field(default=0)
     genere_par_ia: bool = Field(default=True)
     validated_by: Optional[str] = None
-    validated_at: Optional[datetime] = None
+    validated_at: Optional[NaiveDatetime] = None
     rejet_motif: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
+    updated_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
 
 
 class SocialMetric(SQLModel, table=True):
@@ -157,7 +158,7 @@ class SocialMetric(SQLModel, table=True):
     post_id: str = Field(foreign_key="social_post.id", index=True)
     brand_id: str = Field(index=True)
     plateforme: str = Field(index=True)
-    collecte_le: datetime = Field(default_factory=datetime.utcnow, index=True)
+    collecte_le: NaiveDatetime = Field(default_factory=datetime.utcnow, index=True)
     age_heures: float = Field(default=0.0)
     impressions: int = Field(default=0)
     reach: int = Field(default=0)
@@ -181,7 +182,7 @@ class SocialAccountSnapshot(SQLModel, table=True):
     jour: str = Field(index=True)
     followers: int = Field(default=0)
     media_count: Optional[int] = None
-    collecte_le: datetime = Field(default_factory=datetime.utcnow)
+    collecte_le: NaiveDatetime = Field(default_factory=datetime.utcnow)
 
 
 class SocialReport(SQLModel, table=True):
@@ -192,7 +193,7 @@ class SocialReport(SQLModel, table=True):
     periode_fin: str
     faits: dict = Field(default={}, sa_column=Column(JSON))
     analyse: dict = Field(default={}, sa_column=Column(JSON))
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
 
 
 class SocialJob(SQLModel, table=True):
@@ -203,5 +204,5 @@ class SocialJob(SQLModel, table=True):
     params: dict = Field(default={}, sa_column=Column(JSON))
     resultat: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     erreur: Optional[str] = Field(default=None, sa_column=Column(Text))
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    finished_at: Optional[datetime] = None
+    created_at: NaiveDatetime = Field(default_factory=datetime.utcnow)
+    finished_at: Optional[NaiveDatetime] = None

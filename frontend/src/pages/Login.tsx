@@ -21,7 +21,7 @@ export function Login() {
   return (
     <div className="lg-wrap">
       <form className="lg-card" onSubmit={submit}>
-        <h1>📣 Agent Social</h1>
+        <h1>Agent Social</h1>
         <p>Connexion administrateur</p>
         {error && <div className="lg-err">{error}</div>}
         <label>Identifiant<input value={username} onChange={e => setUsername(e.target.value)} required autoFocus /></label>

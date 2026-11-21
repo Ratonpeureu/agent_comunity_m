@@ -18,15 +18,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY rh_manager ./rh_manager
+COPY agent ./agent
 COPY --from=front /f/dist ./static
 
 # social_config.py écrit dans /app/uploads/social : on le redirige vers le volume
-RUN ln -s /data/uploads /app/uploads
+RUN mkdir -p /data/uploads/social && ln -s /data/uploads /app/uploads
 
 VOLUME /data
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s \
   CMD python -c "import urllib.request,os;urllib.request.urlopen('http://127.0.0.1:'+os.getenv('PORT','8080')+'/health',timeout=4)" || exit 1
 
-CMD ["python", "-m", "rh_manager.run"]
+CMD ["python", "-m", "agent.run"]

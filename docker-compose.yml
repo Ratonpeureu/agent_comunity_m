@@ -5,13 +5,14 @@ services:
     build: .
     image: social-agent:latest
     container_name: social-agent
-    restart: unless-stopped
+    restart: unless-stopped          # indispensable : l'app s'arrête après la sauvegarde du /setup et Docker la relance
     ports:
-      - "8080:8080"
+      - "${HOST_PORT:-8080}:${PORT:-8080}"
     volumes:
-      - ./data:/data          
+      - ./data:/data
     environment:
       - TZ=Africa/Dakar
+      - PORT=${PORT:-8080}
 
 
 networks:

@@ -44,7 +44,7 @@ export function Brand() {
             <button className="sm-btn pri" disabled={saving} onClick={async () => {
               await save({ site_url: b.site_url, urls_supplementaires: b.urls_supplementaires, config: { brief_manuel: b.config.brief_manuel || '' } }, 'Source enregistrée')
               runJob('Analyse de la marque', () => social.analyzeBrand())
-            }}>✨ Enregistrer & analyser avec l'IA</button>
+            }}>Enregistrer & analyser avec l'IA</button>
             <button className="sm-btn" disabled={saving} onClick={() => save({ site_url: b.site_url, urls_supplementaires: b.urls_supplementaires, config: { brief_manuel: b.config.brief_manuel || '' } })}>Enregistrer seulement</button>
             {b.derniere_analyse && <span className="sm-xs sm-mut">Dernière analyse : {fmtDate(b.derniere_analyse)}</span>}
           </div>
@@ -72,7 +72,7 @@ export function Brand() {
       {/* ───────── VOIX ───────── */}
       {tab === 'voix' && (
         <div className="sm-card"><div className="sm-card-b">
-          <div className="sm-row sm-mb"><button className="sm-btn" onClick={() => runJob('Réapprentissage du ton', () => social.refreshTone())}>🎙 Réapprendre le ton depuis mes exemples</button><span className="sm-xs sm-mut">Demande au moins 3 exemples (onglet suivant). Tes corrections de posts comptent double.</span></div>
+          <div className="sm-row sm-mb"><button className="sm-btn" onClick={() => runJob('Réapprentissage du ton', () => social.refreshTone())}>Réapprendre le ton depuis mes exemples</button><span className="sm-xs sm-mut">Demande au moins 3 exemples (onglet suivant). Tes corrections de posts comptent double.</span></div>
           <div className="sm-grid g2">
             <Field label="Qui parle ?"><input className="sm-input" value={b.ton.persona || ''} onChange={e => sec('ton', 'persona', e.target.value)} /></Field>
             <Field label="Formalité"><input className="sm-input" value={b.ton.formalite || ''} onChange={e => sec('ton', 'formalite', e.target.value)} placeholder="vouvoiement, ton professionnel chaleureux" /></Field>

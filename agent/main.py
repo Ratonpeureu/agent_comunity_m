@@ -41,6 +41,8 @@ if CONFIGURED:
     from agent.services.social.social_config import utcnow
 
     social_patches.apply()
+    from agent.services.social import social_extras
+    social_extras.apply()
 
 
 @asynccontextmanager
@@ -80,6 +82,7 @@ if CONFIGURED:
     app.include_router(social_assets_router)
     app.include_router(social_connect_router)
     app.include_router(extra_router)
+    app.include_router(social_extras.router)
     app.mount("/uploads", StaticFiles(directory=str(UPLOAD_ROOT)), name="uploads")
 
 

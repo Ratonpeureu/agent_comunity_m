@@ -41,7 +41,7 @@ export function Library() {
     <div>
       <PageHead title="Captures du logiciel" sub="L'IA décrit chaque capture, la renomme, choisit les hashtags et propose les zones à flouter / zoomer.">
         <button className="sm-btn" onClick={() => setStock(true)}>Photos libres</button>
-        <button className="sm-btn" onClick={() => setStudio(true)}>🎨 Studio de montage</button>
+        <button className="sm-btn" onClick={() => setStudio(true)}>Studio de montage</button>
         <button className="sm-btn" onClick={() => runJob('Analyse des captures', () => social.assets.analyze({ max_images: 15 }))}>Analyser les nouvelles</button>
         <input ref={fileRef} type="file" hidden multiple accept="image/png,image/jpeg,image/webp" onChange={e => { upload(e.target.files); e.target.value = '' }} />
         <button className="sm-btn pri" disabled={up} onClick={() => fileRef.current?.click()}>{up ? <Spinner /> : '+ Ajouter des captures'}</button>
@@ -51,7 +51,7 @@ export function Library() {
         <Stat label="Captures" value={items.length} /><Stat label="Modules couverts" value={modules.length} />
         <Stat label="Exclues" value={excluded} /><Stat label="Données perso non floutées" value={sensitive} hint={sensitive ? 'Non utilisées tant que non corrigées' : 'RAS'} trend={sensitive ? 'down' : 'up'} />
       </div>
-      {sensitive > 0 && <div className="sm-note">⚠ {sensitive} capture(s) montrent des données personnelles sans zone floutée. Elles sont automatiquement écartées des posts : ouvre-les pour dessiner les zones à flouter.</div>}
+      {sensitive > 0 && <div className="sm-note">{sensitive} capture(s) montrent des données personnelles sans zone floutée. Elles sont automatiquement écartées des posts : ouvre-les pour dessiner les zones à flouter.</div>}
 
       <div className={`sm-drop sm-mb${drag ? ' on' : ''}`} onDragOver={e => { e.preventDefault(); setDrag(true) }} onDragLeave={() => setDrag(false)} onDrop={e => { e.preventDefault(); setDrag(false); upload(e.dataTransfer.files) }}>
         Glisse tes captures ici (PNG / JPG / WebP) — elles sont analysées automatiquement
