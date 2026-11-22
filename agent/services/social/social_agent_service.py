@@ -23,12 +23,14 @@ from agent.db import (
     SocialPost, SocialReport, SocialStyleSample, get_celery_session,
 )
 from agent.services.llm_client.llm_client import LLMClient
+from agent.services.llm_client import llm_usage
+
 from agent.services.serper_client import serper_news
 from agent.services.social import social_analytics as an
 from agent.services.social import social_gateway as pub
 from agent.services.social import social_video as video
 from agent.services.social.social_config import (
-    PLATFORMS, PUBLIC_BASE_URL, SPECS, UPLOAD_DIR, dec, enc, to_local, utcnow,
+    PLATFORMS, norm_format,PUBLIC_BASE_URL, SPECS, UPLOAD_DIR, dec, enc, to_local, utcnow,
 )
 from agent.services.social import social_assets as assets
 from agent.services.social import social_montage as montage
@@ -89,7 +91,9 @@ async def llm_json(user: str, system: str, temperature: float = 0.5, max_tokens:
                 last = RuntimeError("Réponse LLM non parseable")
                 continue
             return r
-        except RuntimeError as e:  # 429 Groq, timeout...
+        except (llm_usage.BudgetExceeded, llm_usage.KeysUnavailable):
+            raise
+        except RuntimeError as e:  # 429, timeout...
             last = e
     raise last
 
@@ -635,14 +639,43 @@ async def _recent_posts(brand_id: str, plat: str, n: int = 25) -> list[str]:
     return [r for r in rows if r]
 
 
-async def _write_for_platforms(brand: SocialBrand, idea: dict, plats: list[str], instruction: str = "") -> list[dict]:
+_FORMAT_RULES = {
+    "video": "FORMAT IMPOSÉ : VIDÉO verticale animée → visuel.template=\"video\" ; remplis script_video (CHAÎNE de texte : "
+             "accroche ≤7 mots, 3-4 scènes courtes, voix off ≤70 mots, CTA).",
+    "carrousel": "FORMAT IMPOSÉ : CARROUSEL → visuel.template=\"carrousel\" avec 3 à 5 asset_ids utilisables ; script_video=null.",
+    "image": "FORMAT IMPOSÉ : IMAGE UNIQUE → un template d'image unique (jamais video ni carrousel) ; script_video=null.",
+    "texte": "FORMAT IMPOSÉ : TEXTE SEUL → visuel.template=\"aucun\" ; script_video=null.",
+}
+
+
+def _enforce_format(d: dict, fmt: str) -> dict:
+    """Force le format choisi par l'admin, quoi que le LLM ait renvoyé."""
+    vis = dict(d.get("visuel") or {})
+    tpl = vis.get("template")
+    if fmt == "video":
+        vis["template"], vis["slides"] = "video", []
+    elif fmt == "carrousel":
+        vis["template"], vis["slides"] = "carrousel", []
+    elif fmt == "texte":
+        vis = {"template": "aucun", "asset_ids": []}
+    elif tpl in (None, "", "video", "carrousel", "aucun"):
+        vis["template"] = "capture_cadree"
+    d["visuel"], d["format"] = vis, fmt
+    if fmt != "video":
+        d["script_video"] = None
+    return d
+
+
+async def _write_for_platforms(brand: SocialBrand, idea: dict, plats: list[str], instruction: str = "",
+                               formats: dict | None = None) -> list[dict]:
+    formats = formats or {}
     c = cfg(brand)
     allow = c.get("autoriser_captures_sensibles", False)
     catalog = {a["id"]: a for a in assets.list_assets()}
     allowed = [i for i in (idea.get("asset_ids") or []) if i in catalog and assets.eligible(catalog[i], allow)]
     stats = await assets.asset_report(brand.id) if c.get("utiliser_captures", True) else None
+    qtxt = " ".join(str(idea.get(k) or "") for k in ("titre", "angle", "accroche")) + " " + instruction
     if not allowed and stats is not None:
-        qtxt = " ".join(str(idea.get(k) or "") for k in ("titre", "angle", "accroche")) + " " + instruction
         allowed = [a["id"] for a in assets.shortlist(qtxt, plats[0], 3, stats, allow)]
     items = [catalog[i] for i in allowed]
     facts = sorted({f for a in items for f in _asset_facts(a)})
@@ -654,11 +687,13 @@ async def _write_for_platforms(brand: SocialBrand, idea: dict, plats: list[str],
     hooks = random.sample(_HOOKS, k=len(_HOOKS))
     good: dict[str, dict] = {}
     why: dict[str, str] = {}
+    todo = list(plats)
     for attempt in range(2):
         todo = [p for p in plats if p not in good]
         if not todo:
             break
-        specs = "\n".join(f"- {p}: {SPECS[p]['brief']} Accroche imposée : {hooks[plats.index(p) % len(hooks)]}." for p in todo)
+        specs = "\n".join(f"- {p}: {SPECS[p]['brief']} Accroche imposée : {hooks[plats.index(p) % len(hooks)]}. "
+                          f"{_FORMAT_RULES.get(formats.get(p), '')}" for p in todo)
         recent_txt = "\n".join(f"- {r[:110]}" for p in todo for r in recents[p][:6]) or "(aucun)"
         retry = ("CORRECTION : tes versions précédentes ont été refusées : " + json.dumps(why, ensure_ascii=False)) if why else ""
         user = _tpl(_WRITE_PROMPT, CTX=ctx, TITRE=idea.get("titre"), ANGLE=idea.get("angle"), PILIER=idea.get("pilier"),
@@ -668,38 +703,67 @@ async def _write_for_platforms(brand: SocialBrand, idea: dict, plats: list[str],
         r = await llm_json(user, SYSTEM_WRITER, temperature=0.6, max_tokens=5500)
         logger.warning("LLM: %s", str(r)[:800])
         for d in r.get("posts", []):
-            p = (d.get("plateforme") or "").strip().lower()   # ← normalisation
+            p = (d.get("plateforme") or "").strip().lower()
             if p not in todo:
                 why[p or "(vide)"] = f"plateforme invalide {d.get('plateforme')!r}; attendu: {todo}"
                 continue
             if p in good:
                 continue
-            d["plateforme"] = p                                # ← réécrit pour _persist_posts
+            d["plateforme"] = p
             pb = _problem(d.get("contenu", ""), ok_nums, recents[p])
             if pb:
                 why[p] = pb
             else:
                 good[p] = d
                 why.pop(p, None)
-    
+
     if not good:
-        raise ValueError(
-            f"Aucun post valide : {why or f'le LLM n’a renvoyé aucun post pour {todo}'}"
-        )
+        raise ValueError(f"Aucun post valide : {why or f'le LLM n’a renvoyé aucun post pour {todo}'}")
     drafts = []
     for idx, p in enumerate(plats):
         d = good.get(p)
         if not d:
             logger.warning("Post %s écarté : %s", p, why.get(p))
             continue
-        vis = d.get("visuel") or {}
+        fmt = formats.get(p)
+        vis = dict(d.get("visuel") or {})
         ids = [i for i in (vis.get("asset_ids") or []) if i in allowed]
         if not ids and allowed:
-            ids = [allowed[idx % len(allowed)]]       # une capture différente par plateforme
+            ids = [allowed[idx % len(allowed)]]
+        if fmt in ("carrousel", "video") and len(ids) < 3 and c.get("utiliser_captures", True):
+            extra = [a["id"] for a in assets.shortlist(qtxt, p, 6, stats or {}, allow, set(ids))]
+            ids = (ids + extra)[:5]
         vis["asset_ids"] = ids
         d["visuel"] = vis
+        if fmt:
+            _enforce_format(d, fmt)
         drafts.append(d)
     return drafts
+
+
+
+def _script_text(v) -> str | None:
+    """Le LLM renvoie parfois script_video en dict/liste : on le convertit en texte lisible."""
+    if not v:
+        return None
+    if isinstance(v, str):
+        return v.strip() or None
+
+    def fmt(x):
+        return x if isinstance(x, str) else json.dumps(x, ensure_ascii=False)
+
+    if isinstance(v, dict):
+        parts = []
+        for k, val in v.items():
+            label = str(k).replace("_", " ").capitalize()
+            if isinstance(val, (list, tuple)):
+                parts.append(f"{label} :\n" + "\n".join(f"- {fmt(x)}" for x in val))
+            else:
+                parts.append(f"{label} : {fmt(val)}")
+        return "\n\n".join(parts)
+    if isinstance(v, (list, tuple)):
+        return "\n".join(f"- {fmt(x)}" for x in v)
+    return str(v)
 
 
 async def render_spec(spec, plat, brand, c, text="", script=""):
@@ -712,6 +776,8 @@ async def _persist_posts(brand, c, idea, drafts, groupe_id, variante=None, auto_
     catalog = {a["id"]: a for a in assets.list_assets()}
     stats = await assets.asset_report(brand.id)
     stock_ok = stock.available()
+    for _d in drafts:
+        _d["script_video"] = _script_text(_d.get("script_video"))
     brand_tags = list((brand.identite or {}).get("hashtags_marque") or [])
 
     async def _vis(d):
@@ -778,7 +844,9 @@ async def _persist_posts(brand, c, idea, drafts, groupe_id, variante=None, auto_
     return created
 
 
-async def write_posts(idea_id: str, plateformes: list[str] | None = None, instruction: str = "", auto_publish: bool = False) -> dict:
+
+async def write_posts(idea_id: str, plateformes: list[str] | None = None, instruction: str = "",
+                      auto_publish: bool = False, formats: dict | None = None) -> dict:
     async with get_celery_session() as s:
         idea = await s.get(SocialIdea, idea_id)
         if not idea:
@@ -790,8 +858,13 @@ async def write_posts(idea_id: str, plateformes: list[str] | None = None, instru
         plats = [p for p in (plateformes or idea.plateformes or []) if p in PLATFORMS]
     if not plats:
         raise ValueError("Aucune plateforme valide")
+    
+
     c = cfg(brand)
-    drafts = await _write_for_platforms(brand, idea_d, plats, instruction)
+    defaults = c.get("formats_defaut") or {}
+    fm = {p: norm_format(p, (formats or {}).get(p) or defaults.get(p)) for p in plats}
+    drafts = await _write_for_platforms(brand, idea_d, plats, instruction, fm)
+
     posts = await _persist_posts(brand, c, idea_d, drafts, uuid.uuid4().hex, auto_publish=auto_publish)
     async with get_celery_session() as s:
         await s.execute(sa_update(SocialIdea).where(SocialIdea.id == idea_id).values(statut="redige"))
@@ -816,7 +889,7 @@ async def regenerate_post(post_id: str, instruction: str) -> dict:
         p = await s.get(SocialPost, post_id)
         p.contenu = await _fit_text(d.get("contenu", p.contenu), SPECS[plat]["max"] - 40)
         p.hashtags = _clean_tags(d.get("hashtags"), SPECS[plat]["hashtags"])
-        p.script_video = d.get("script_video") or p.script_video
+        p.script_video = _script_text(d.get("script_video")) or p.script_video
         p.updated_at = utcnow()
         await s.commit()
         await s.refresh(p)

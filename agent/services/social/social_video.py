@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 import uuid
 from pathlib import Path
-
+import json
 from PIL import Image, ImageDraw
 
 from agent.services.social import social_assets as assets
@@ -100,6 +100,7 @@ def _fallback(text, ids, catalog, brand, cta):
 
 
 async def make_plan(llm_json, brand, text, script, ids, catalog, cible, voix):
+    script = script if isinstance(script, str) else (json.dumps(script, ensure_ascii=False) if script else "")
     cat = "\n".join(f"[{i}] {catalog[i].get('titre_court')} | module={catalog[i].get('module')} | "
                     f"visible: {'; '.join((catalog[i].get('fonctionnalites_visibles') or [])[:5])}" for i in ids)
     user = f"""Marque : {brand.nom} — {brand.site_url}
@@ -374,14 +375,14 @@ def _render(job):
 
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
            "-stream_loop", "-1", "-i", str(job["audio"])]
-    fo = max(0, total - 1.4)
+    fo = max(0.0, total - 1.4)
     if job.get("voice"):
         cmd += ["-i", str(job["voice"]), "-filter_complex",
-                f"[1:a]volume=0.22,afade=t=in:st=0:d=.6,afade=t=out:st={fo:.2f}:d=1.4[mu];"
-                f"[2:a]adelay=400|400,volume=1.15[vo];[mu][vo]amix=inputs=2:duration=longest:normalize=0[aout]",
+                f"[1:a]volume=0.22,afade=t=in:st=0:d=0.6,afade=t=out:st={fo:.2f}:d=1.4[mu];"
+                f"[2:a]adelay=400|400,volume=1.15[vo];[mu][vo]amix=inputs=2:duration=longest[aout]",
                 "-map", "0:v", "-map", "[aout]"]
     else:
-        cmd += ["-map", "0:v", "-map", "1:a", "-af", f"afade=t=in:st=0:d=.6,afade=t=out:st={fo:.2f}:d=1.4"]
+        cmd += ["-map", "0:v", "-map", "1:a", "-af", f"afade=t=in:st=0:d=0.6,afade=t=out:st={fo:.2f}:d=1.4"]
     cmd += ["-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p", "-r", str(FPS),
             "-c:a", "aac", "-b:a", "160k", "-t", f"{total:.2f}", "-movflags", "+faststart", str(job["out"])]
     errf = tempfile.TemporaryFile()

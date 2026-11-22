@@ -287,13 +287,14 @@ async def patch_idea(idea_id: str, body: IdeaPatch):
 class WriteBody(BaseModel):
     plateformes: Optional[List[str]] = None
     instruction: str = ""
+    formats: Optional[dict] = None      # {"linkedin": "video", "instagram": "carrousel", ...}
 
 
 @router.post("/ideas/{idea_id}/write")
 async def write_from_idea(idea_id: str, body: WriteBody):
-    return await _job("write_posts", {"idea_id": idea_id, "plateformes": body.plateformes, "instruction": body.instruction})
-
-
+    return await _job("write_posts", {"idea_id": idea_id, "plateformes": body.plateformes,
+                                      "instruction": body.instruction, "formats": body.formats})
+                                      
 # ═════════════ POSTS ═════════════
 @router.get("/posts")
 async def list_posts(statut: Optional[str] = None, plateforme: Optional[str] = None,

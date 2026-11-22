@@ -14,6 +14,7 @@ import { Accounts } from './Accounts'
 import { Replies } from './Replies'
 import { Media } from './Media'
 import { Prompts } from './Prompts'
+import { Parametres } from './Parametres'
 
 const TABS = [
   { to: '/social-agent', label: "Vue d'ensemble", end: true },
@@ -25,6 +26,7 @@ const TABS = [
   { to: '/social-agent/analytics', label: 'Analytics' },
   { to: '/social-agent/brand', label: 'Marque' },
   { to: '/social-agent/prompts', label: 'Prompts' },
+  { to: '/social-agent/settings', label: 'Paramètres' },
   { to: '/social-agent/accounts', label: 'Comptes' },
   { to: '/social-agent/replies', label: 'Réponses' },
 ]
@@ -60,6 +62,7 @@ export function Social() {
           <Route path="prompts" element={<Prompts />} />
           <Route path="accounts" element={<Accounts />} />
           <Route path="replies" element={<Replies />} />
+          <Route path="settings" element={<Parametres />} />
           <Route path="*" element={<Navigate to="/social-agent" replace />} />
         </Routes>
       </SocialProvider>

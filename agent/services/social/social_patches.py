@@ -36,8 +36,6 @@ def finalize_spec(spec, platform: str, text: str, catalog: dict, cfg: dict | Non
     if platform == "tiktok":
         if tpl not in ("video", "carrousel", "photo_overlay"):
             tpl = "video" if cfg.get("video_tiktok", True) else "carrousel"
-    elif tpl == "video" and platform not in ("instagram", "facebook"):
-        tpl = None                                # LinkedIn / X ne publient pas de vidéo ici
 
     rnd = random.Random(hashlib.md5(f"{platform}|{text or 'x'}".encode()).hexdigest())
     if (not manual and cfg.get("varier_montages", True) and tpl in (None, "capture_cadree")
@@ -159,9 +157,9 @@ def apply():
     svc.JOB_HANDLERS["rebuild_visual"] = lambda **kw: svc.rebuild_visual(kw["post_id"], kw.get("patch"))
 
     SPECS["tiktok"]["brief"] = (
-        "TikTok (VIDÉO verticale 9:16, animée, sous-titrée, avec musique) : légende ≤150 caractères, très directe, "
-        "3-5 hashtags. visuel.template = \"video\". Renseigne script_video : accroche choc ≤7 mots, 3-4 scènes courtes, "
-        "voix off ≤70 mots (phrases courtes), CTA final.")
+        "TikTok : légende ≤150 caractères, très directe, 3-5 hashtags. Le format (vidéo verticale animée ou carrousel "
+        "photo) est imposé par la ligne FORMAT IMPOSÉ. Pour une vidéo : script_video = accroche choc ≤7 mots, "
+        "3-4 scènes courtes, voix off ≤70 mots, CTA final.")
 
     name = os.getenv("SOCIAL_BRAND_NAME") or os.getenv("SOCIAL_BRAND_SLUG") or "la marque"
     site = os.getenv("SOCIAL_BRAND_SITE", "")

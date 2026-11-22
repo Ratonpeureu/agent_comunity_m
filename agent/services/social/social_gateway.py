@@ -14,7 +14,8 @@ import httpx
 
 from agent.services.social import social_publishers as legacy
 from agent.services.social.social_config import OAUTH_BASE
-from agent.services.social.social_publishers import GRAPH, PublishError, _compose, _graph, _is_video
+from agent.services.social.social_publishers import GRAPH, PublishError, _compose, _graph, _is_video, _media_bytes
+
 
 logger = logging.getLogger("social_gateway")
 IG = "https://graph.instagram.com"
@@ -250,6 +251,35 @@ async def _x_upload(http, tok, url):
         raise PublishError(f"X upload média {r.status_code} : {r.text[:250]}")
     return str(mid)
 
+async def _x_upload_video(http, tok, url):
+    data = await _media_bytes(http, url)
+    h = {"Authorization": f"Bearer {tok}"}
+    r = await http.post(f"{XAPI}/2/media/upload/initialize", headers=h,
+                        json={"media_type": "video/mp4", "total_bytes": len(data), "media_category": "tweet_video"})
+    d = r.json() if r.content else {}
+    mid = (d.get("data") or {}).get("id")
+    if r.status_code >= 400 or not mid:
+        raise PublishError(f"X vidéo (init) {r.status_code} : {r.text[:250]}")
+    CH = 4 * 1024 * 1024
+    for i in range(0, len(data), CH):
+        a = await http.post(f"{XAPI}/2/media/upload/{mid}/append", headers=h, data={"segment_index": str(i // CH)},
+                            files={"media": ("chunk.mp4", data[i:i + CH], "application/octet-stream")})
+        if a.status_code >= 400:
+            raise PublishError(f"X vidéo (envoi) {a.status_code} : {a.text[:250]}")
+    f = await http.post(f"{XAPI}/2/media/upload/{mid}/finalize", headers=h)
+    if f.status_code >= 400:
+        raise PublishError(f"X vidéo (finalisation) {f.status_code} : {f.text[:250]}")
+    info = ((f.json() if f.content else {}).get("data") or {}).get("processing_info")
+    for _ in range(40):
+        if not info or info.get("state") == "succeeded":
+            break
+        if info.get("state") == "failed":
+            raise PublishError("X : traitement de la vidéo en échec " + str(info.get("error", ""))[:150])
+        await asyncio.sleep(min(int(info.get("check_after_secs", 3)), 10))
+        s = await http.get(f"{XAPI}/2/media/upload", headers=h, params={"command": "STATUS", "media_id": mid})
+        info = ((s.json() if s.content else {}).get("data") or {}).get("processing_info")
+    return str(mid)
+
 
 async def _pub_x(http, p, c):
     tok = c["access_token"]
@@ -259,8 +289,12 @@ async def _pub_x(http, p, c):
     if len(body) > room:
         body = body[:room - 1].rstrip() + "…"
     payload = {"text": body + (f"\n\n{tags}" if tags else "")}
-    images = [u for u in (p.get("media_urls") or []) if not _is_video(u)][:4]
-    if images:
+    media = p.get("media_urls") or []
+    videos = [u for u in media if _is_video(u)]
+    images = [u for u in media if not _is_video(u)][:4]
+    if videos:
+        payload["media"] = {"media_ids": [await _x_upload_video(http, tok, videos[0])]}   # erreur explicite, pas de repli
+    elif images:
         try:
             payload["media"] = {"media_ids": [await _x_upload(http, tok, u) for u in images]}
         except PublishError as e:
@@ -273,7 +307,6 @@ async def _pub_x(http, p, c):
         raise PublishError(f"X API {r.status_code} : {str(d.get('detail') or d.get('title') or r.text)[:300]}")
     tid = d["data"]["id"]
     return {"external_id": tid, "external_url": f"https://x.com/{c.get('username') or 'i/web'}/status/{tid}"}
-
 
 # ═════════════════════ QPOST (TikTok, Instagram…) ═════════════════════
 def _qkey():

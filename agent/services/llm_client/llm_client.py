@@ -5,6 +5,8 @@ import time
 
 import httpx
 
+from agent.services.llm_client import llm_usage as U
+
 
 def _extract_json(text: str):
     text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.S)
@@ -26,35 +28,60 @@ def _extract_json(text: str):
 
 
 class LLMClient:
-    def __init__(self):
-        self.key = os.getenv("LLM_API_KEY") or os.getenv("GROQ_API_KEY") or os.getenv("GROQ_API_KEY_FACTURE")
-        self.base = (os.getenv("LLM_BASE_URL") or "https://api.groq.com/openai/v1").rstrip("/")
-        self.model = os.getenv("LLM_MODEL") or os.getenv("GROQ_MODEL_FACTURE") or "llama-3.3-70b-versatile"
+    """Texte : pool de clés (rotation auto), budgets, journal de consommation réelle."""
 
     def _call(self, messages, temperature, max_tokens, json_mode, retries):
-        if not self.key:
-            raise RuntimeError("Clé IA manquante : renseigne GROQ_API_KEY dans les Réglages.")
-        payload = {"model": self.model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
+        base = (os.getenv("LLM_BASE_URL") or "https://api.groq.com/openai/v1").rstrip("/")
+        model = U.model_for("texte")
+        payload = {"model": model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
-        last = ""
-        for attempt in range(retries + 1):
+        U.check_budget()
+        tried: set = set()
+        last, attempt = "", 0
+        while True:
+            kid, key = U.pick_key("texte", tried)
+            if not key:
+                raise U.KeysUnavailable("Aucune clé IA disponible (épuisées, invalides, expirées ou absentes). "
+                                        "Ajoute une clé dans Paramètres. Dernière erreur : " + (last or "aucune"))
+            t0 = time.time()
             try:
-                r = httpx.post(f"{self.base}/chat/completions", json=payload, timeout=120,
-                               headers={"Authorization": f"Bearer {self.key}", "Content-Type": "application/json"})
+                r = httpx.post(f"{base}/chat/completions", json=payload, timeout=120,
+                               headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
             except httpx.HTTPError as e:
                 last = str(e)
-                time.sleep(4 * (attempt + 1))
+                U.record("texte", kid, model, 0, 0, False, 0, int((time.time() - t0) * 1000), last)
+                attempt += 1
+                if attempt > retries:
+                    break
+                time.sleep(4 * attempt)
                 continue
+            ms = int((time.time() - t0) * 1000)
+            U.note_headers(kid, r.headers)
             if r.status_code == 200:
-                return r.json()["choices"][0]["message"].get("content") or ""
+                data = r.json()
+                u = data.get("usage") or {}
+                U.record("texte", kid, model, u.get("prompt_tokens", 0), u.get("completion_tokens", 0), True, 200, ms)
+                return data["choices"][0]["message"].get("content") or ""
             last = f"{r.status_code} {r.text[:300]}"
+            U.record("texte", kid, model, 0, 0, False, r.status_code, ms, last)
             if r.status_code == 400 and "response_format" in payload:
                 payload.pop("response_format", None)
                 continue
+            cls = U.classify_error(r.status_code, r.text, r.headers)
+            if cls == "invalid":
+                U.mark_key(kid, "invalide", last)
+                tried.add(kid)
+                continue
+            if cls == "exhausted":
+                U.mark_key(kid, "epuise", last, U.reset_seconds(r.headers))
+                tried.add(kid)
+                continue
             if r.status_code == 429 or r.status_code >= 500:
-                wait = float(r.headers.get("retry-after") or 8 * (attempt + 1))
-                time.sleep(min(wait, 40))
+                attempt += 1
+                if attempt > retries:
+                    break
+                time.sleep(min(U.retry_after(r.headers) or 8 * attempt, 40))
                 continue
             break
         raise RuntimeError(f"LLM indisponible : {last}")

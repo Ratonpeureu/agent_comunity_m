@@ -16,6 +16,20 @@ export const PLATFORM_META: Record<Platform, { label: string; short: string; col
 export const pmeta = (p: string) =>
   PLATFORM_META[p as Platform] || { label: p, short: (p || '?').slice(0, 2), color: '#667085', max: 3000 }
 
+
+
+export type Format = 'texte' | 'image' | 'carrousel' | 'video'
+export const FORMAT_LABEL: Record<Format, string> = { texte: 'Texte seul', image: 'Image', carrousel: 'Carrousel', video: 'Vidéo' }
+export const ALLOWED_FORMATS: Record<Platform, Format[]> = {
+  linkedin: ['texte', 'image', 'carrousel', 'video'],
+  facebook: ['texte', 'image', 'carrousel', 'video'],
+  instagram: ['image', 'carrousel', 'video'],
+  x: ['image', 'video'],
+  tiktok: ['video', 'carrousel'],
+}
+export const DEFAULT_FORMAT: Partial<Record<Platform, Format>> = { tiktok: 'video' }
+
+
 export const STATUS_META: Record<string, { label: string; tone: string }> = {
   brouillon: { label: 'Brouillon', tone: 'gray' },
   a_valider: { label: 'À valider', tone: 'amber' },
@@ -124,7 +138,20 @@ export interface AssetDiag {
 
 /* ───────────── Utilitaires ───────────── */
 export const errMsg = (e: unknown): string => (e instanceof Error ? e.message : String(e || 'Erreur inconnue'))
+
 export const isVideo = (u: string) => /\.(mp4|mov)(\?|$)/i.test(u || '')
+
+/** URL absolue d'un média (PUBLIC_BASE_URL) → chemin relatif même origine. Évite les images cassées. */
+export function mediaSrc(u?: string | null): string {
+  if (!u) return ''
+  try {
+    const x = new URL(u, window.location.origin)
+    if (x.pathname.startsWith('/uploads/')) return x.pathname + x.search
+  } catch { /* ignore */ }
+  return u
+}
+
+
 export const fmtNum = (n?: number | null) => (n == null ? '—' : new Intl.NumberFormat('fr-FR').format(Math.round(n)))
 export const fmtPct = (x?: number | null, d = 2) => (x == null ? '—' : `${(x * 100).toFixed(d)} %`)
 export const prettify = (s?: string) => (s || '').replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())
@@ -191,7 +218,8 @@ export const social = {
   ideas: (statut?: string): Promise<Idea[]> => apiFetch(`${P}/ideas${qs({ statut, limit: 100 })}`),
   genIdeas: (b: { nb: number; thematique?: string; avec_tendances: boolean }) => jpost(`${P}/ideas/generate`, b),
   patchIdea: (id: string, b: { statut?: string; motif_rejet?: string }): Promise<Idea> => jpatch(`${P}/ideas/${id}`, b),
-  writeIdea: (id: string, plateformes: string[], instruction: string) => jpost(`${P}/ideas/${id}/write`, { plateformes, instruction }),
+  writeIdea: (id: string, plateformes: string[], instruction: string, formats?: Record<string, string>) =>
+    jpost(`${P}/ideas/${id}/write`, { plateformes, instruction, formats: formats || null }),
 
   posts: (p: { statut?: string; plateforme?: string; limit?: number; offset?: number }): Promise<Post[]> => apiFetch(`${P}/posts${qs(p)}`),
   post: (id: string): Promise<Post> => apiFetch(`${P}/posts/${id}`),

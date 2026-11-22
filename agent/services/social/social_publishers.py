@@ -7,8 +7,8 @@ import urllib.parse
 from datetime import datetime, timedelta
 
 import httpx
-
-from agent.services.social.social_config import OAUTH_BASE
+from pathlib import Path
+from agent.services.social.social_config import OAUTH_BASE, UPLOAD_DIR
 
 GRAPH_V = os.getenv("META_GRAPH_VERSION", "v24.0")
 GRAPH = f"https://graph.facebook.com/{GRAPH_V}"
@@ -23,6 +23,19 @@ class PublishError(Exception):
 
 def _is_video(url: str) -> bool:
     return url.lower().split("?")[0].endswith((".mp4", ".mov"))
+
+
+
+async def _media_bytes(http, url: str) -> bytes:
+    """Lit le fichier directement sur le disque s'il est local, sinon le télécharge."""
+    m = re.search(r"/uploads/social/([^/?#]+)$", (url or "").split("?")[0])
+    if m:
+        p = Path(UPLOAD_DIR) / m.group(1)
+        if p.is_file():
+            return p.read_bytes()
+    r = await http.get(url)
+    r.raise_for_status()
+    return r.content
 
 
 def _compose(p: dict) -> str:
@@ -143,18 +156,56 @@ async def _li_upload_image(http, tok, owner, url):
     return v["image"]
 
 
+async def _li_upload_video(http, tok, owner, url):
+    data = await _media_bytes(http, url)
+    r = await http.post(f"{LI}/rest/videos?action=initializeUpload", headers=_li_headers(tok),
+                        json={"initializeUploadRequest": {"owner": owner, "fileSizeBytes": len(data),
+                                                          "uploadCaptions": False, "uploadThumbnail": False}})
+    if r.status_code >= 400:
+        raise PublishError(f"LinkedIn vidéo (init) {r.status_code} : {r.text[:300]}")
+    v = r.json()["value"]
+    etags = []
+    for part in v.get("uploadInstructions", []):
+        chunk = data[part["firstByte"]:part["lastByte"] + 1]
+        up = await http.put(part["uploadUrl"], content=chunk,
+                            headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/octet-stream"})
+        if up.status_code >= 400:
+            raise PublishError(f"LinkedIn vidéo (envoi) {up.status_code} : {up.text[:300]}")
+        etags.append(up.headers.get("etag", ""))
+    fin = await http.post(f"{LI}/rest/videos?action=finalizeUpload", headers=_li_headers(tok),
+                          json={"finalizeUploadRequest": {"video": v["video"], "uploadToken": v.get("uploadToken", ""),
+                                                          "uploadedPartIds": etags}})
+    if fin.status_code >= 400:
+        raise PublishError(f"LinkedIn vidéo (finalisation) {fin.status_code} : {fin.text[:300]}")
+    urn = urllib.parse.quote(v["video"], safe="")
+    for _ in range(30):                              # attend la fin du traitement côté LinkedIn
+        s = await http.get(f"{LI}/rest/videos/{urn}", headers=_li_headers(tok))
+        st = (s.json() if s.status_code == 200 else {}).get("status")
+        if st == "AVAILABLE":
+            break
+        if st == "PROCESSING_FAILED":
+            raise PublishError("LinkedIn : traitement de la vidéo en échec")
+        await asyncio.sleep(5)
+    return v["video"]
+
+
 async def _pub_linkedin(http, p, c):
     tok, author = c["access_token"], str(c.get("author_urn", "")).strip()
     if not re.match(r"^urn:li:(organization|person):[A-Za-z0-9_-]+$", author):
         raise PublishError(f"LinkedIn : author_urn invalide « {author[:60]} » — corrige LINKEDIN_ORG_ID dans .env puis reconnecte LinkedIn")
-        
-    media = [m for m in (p.get("media_urls") or []) if not _is_video(m)]
+
+    allmedia = p.get("media_urls") or []
+    videos = [m for m in allmedia if _is_video(m)]
+    media = [m for m in allmedia if not _is_video(m)]
     body = {
         "author": author, "commentary": _li_text(_compose(p)), "visibility": "PUBLIC",
         "distribution": {"feedDistribution": "MAIN_FEED", "targetEntities": [], "thirdPartyDistributionChannels": []},
         "lifecycleState": "PUBLISHED", "isReshareDisabledByAuthor": False,
     }
-    if len(media) == 1:
+    if videos:
+        title = ((p.get("contenu") or "").strip().splitlines() or ["Vidéo"])[0][:80]
+        body["content"] = {"media": {"id": await _li_upload_video(http, tok, author, videos[0]), "title": title}}
+    elif len(media) == 1:
         body["content"] = {"media": {"id": await _li_upload_image(http, tok, author, media[0]), "altText": "visuel"}}
     elif len(media) > 1:
         ids = [await _li_upload_image(http, tok, author, u) for u in media[:20]]

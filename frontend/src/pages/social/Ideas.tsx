@@ -1,7 +1,9 @@
 // src/pages/social/Ideas.tsx
 import React, { useState } from 'react'
-import { errMsg, Idea, Platform, pmeta, prettify, social } from '../../lib/social'
-import { Badge, Empty, Field, Loading, Modal, PageHead, PlatformDot, PlatformPicker, Pills, Switch, useLoad, useSocial } from './ui'
+
+import { ALLOWED_FORMATS, DEFAULT_FORMAT, errMsg, Format, FORMAT_LABEL, Idea, Platform, pmeta, prettify, social } from '../../lib/social'
+import { Badge, Empty, Field, Loading, Modal, PageHead, PlatformDot, PlatformIcon, PlatformPicker, Pills, Switch, useLoad, useSocial } from './ui'
+
 
 const OBJ: Record<string, string> = { notoriete: 'Notoriété', engagement: 'Engagement', conversion: 'Conversion', autorite: 'Autorité' }
 
@@ -54,7 +56,7 @@ export function Ideas() {
       )}
 
       {gen && <GenerateModal onClose={() => setGen(false)} onGo={(b) => { setGen(false); runJob('Génération d\'idées', () => social.genIdeas(b)) }} />}
-      {writing && <WriteModal idea={writing} onClose={() => setWriting(null)} onGo={(pl, ins) => { const id = writing.id; setWriting(null); runJob('Rédaction des posts', () => social.writeIdea(id, pl, ins)).then(r => { if (r?.posts_crees) ok(`${r.posts_crees} post(s) créé(s) — onglet Posts › À valider`) }) }} />}
+      {writing && <WriteModal idea={writing} onClose={() => setWriting(null)} onGo={(pl, ins, fm) => { const id = writing.id; setWriting(null); runJob('Rédaction des posts', () => social.writeIdea(id, pl, ins, fm)).then(r => { if (r?.posts_crees) ok(`${r.posts_crees} post(s) créé(s) — onglet Posts › À valider`) }) }} />}
     </div>
   )
 }
@@ -70,16 +72,49 @@ function GenerateModal({ onClose, onGo }: { onClose: () => void; onGo: (b: { nb:
   )
 }
 
-function WriteModal({ idea, onClose, onGo }: { idea: Idea; onClose: () => void; onGo: (pl: string[], ins: string) => void }) {
+
+function WriteModal({ idea, onClose, onGo }: { idea: Idea; onClose: () => void; onGo: (pl: string[], ins: string, fm: Record<string, Format>) => void }) {
+  const initFmt = (p: Platform): Format => {
+    const al = ALLOWED_FORMATS[p]
+    const wanted = idea.format_conseille as Format
+    if (al.includes(wanted)) return wanted
+    return DEFAULT_FORMAT[p] ?? (al.includes('image') ? 'image' : al[0])
+  }
   const [pl, setPl] = useState<string[]>(idea.plateformes || [])
+  const [fm, setFm] = useState<Record<string, Format>>(() => Object.fromEntries((idea.plateformes || []).map(p => [p, initFmt(p as Platform)])))
   const [ins, setIns] = useState('')
+  const onPl = (v: string[]) => {
+    setPl(v)
+    setFm(f => { const n = { ...f }; v.forEach(p => { if (!n[p]) n[p] = initFmt(p as Platform) }); return n })
+  }
+  const hasVideo = pl.some(p => fm[p] === 'video')
   return (
-    <Modal title={`Rédiger : ${idea.titre}`} onClose={onClose} footer={<><button className="sm-btn" onClick={onClose}>Annuler</button><button className="sm-btn pri" disabled={!pl.length} onClick={() => onGo(pl, ins)}>Rédiger {pl.length} version(s)</button></>}>
-      <Field label="Plateformes" hint="Une version native est écrite pour chaque réseau, avec son visuel et son créneau optimal."><PlatformPicker value={pl} onChange={setPl} /></Field>
+    <Modal title={`Rédiger : ${idea.titre}`} onClose={onClose} footer={<><button className="sm-btn" onClick={onClose}>Annuler</button><button className="sm-btn pri" disabled={!pl.length} onClick={() => onGo(pl, ins, Object.fromEntries(pl.map(p => [p, fm[p]])) as Record<string, Format>)}>Rédiger {pl.length} version(s)</button></>}>
+      <Field label="Plateformes" hint="Une version native est écrite pour chaque réseau, avec son visuel et son créneau optimal."><PlatformPicker value={pl} onChange={onPl} /></Field>
+      {!!pl.length && (
+        <Field label="Format de chaque publication">
+          <div className="sm-list">
+            {pl.map(p => (
+              <div className="sm-item" key={p}>
+                <PlatformIcon p={p} size={26} /><b style={{ width: 90 }}>{pmeta(p).label}</b>
+                <div className="sm-chips">
+                  {ALLOWED_FORMATS[p as Platform].map(f => (
+                    <button key={f} type="button" className={`sm-chip pl${fm[p] === f ? ' on' : ''}`} onClick={() => setFm({ ...fm, [p]: f })}>{FORMAT_LABEL[f]}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Field>
+      )}
+      {hasVideo && <div className="sm-note">Chaque vidéo prend 1 à 3 minutes à monter. La rédaction sera plus longue.</div>}
       <Field label="Instruction spéciale (optionnel)" hint="Ex : « ton plus décontracté », « insiste sur le gain de temps », « mentionne la signature électronique »">
         <textarea className="sm-textarea" value={ins} onChange={e => setIns(e.target.value)} />
       </Field>
-      <p className="sm-hint">{pl.map(p => pmeta(p).label).join(' · ')}</p>
+      <p className="sm-hint">{pl.map(p => `${pmeta(p).label} : ${fm[p] ? FORMAT_LABEL[fm[p]] : '—'}`).join(' · ')}</p>
     </Modal>
   )
 }
+
+
+

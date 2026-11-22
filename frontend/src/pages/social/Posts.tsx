@@ -2,18 +2,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
-  errMsg, fmtDateTime, fmtPct, isVideo, PLATFORMS, pmeta, Post, prettify, Prediction, Slot, social, TEMPLATES, toInput, VisualSpec, Platform,
+  errMsg, fmtDateTime, fmtPct, isVideo, mediaSrc, PLATFORMS, pmeta, Post, prettify, Prediction, Slot, social, TEMPLATES, toInput, VisualSpec, Platform,
 } from '../../lib/social'
 import { social2 } from '../../lib/social2'
 import { AssetPicker } from './AssetPicker'
-import { AuthImg, Badge, Empty, Field, Loading, Modal, PageHead, PlatformDot, Pills, ScoreRing, Spinner, StatusBadge, Switch, TagInput, useSocial } from './ui'
+import { AuthImg, Badge, Empty, Field, Loading, MediaImg, Modal, PageHead, PlatformDot, Pills, ScoreRing, Spinner, StatusBadge, Switch, TagInput, useSocial } from './ui'
 
 const FILTERS = [
   { id: '', label: 'Tous' }, { id: 'a_valider', label: 'À valider' }, { id: 'programme', label: 'Programmés' },
   { id: 'publie', label: 'Publiés' }, { id: 'echec', label: 'Échecs' }, { id: 'brouillon', label: 'Brouillons' }, { id: 'rejete', label: 'Rejetés' },
 ]
 const LIMIT = 24
-const VIDEO_PLATFORMS = ['tiktok', 'instagram', 'facebook']
+const VIDEO_PLATFORMS = ['tiktok', 'instagram', 'facebook', 'linkedin', 'x']
 const TIKTOK_TPL = ['video', 'carrousel', 'photo_overlay']
 const STYLE_TPL = ['tilt', 'glass', 'duo', 'checklist', 'quote', 'bold']
 const NO_CAPTURE_TPL = ['carte', 'quote', 'aucun']
@@ -92,26 +92,32 @@ export function Posts() {
       {loading && !items.length ? <Loading /> : !items.length ? <Empty title="Aucun post">Générez des idées puis faites rédiger les posts, ou créez un post manuellement.</Empty> : (
         <>
           <div className="sm-posts">
-            {items.map(p => (
-              <div key={p.id} className={`sm-post${sel.includes(p.id) ? ' sel' : ''}`} onClick={() => setParam('open', p.id)}>
-                {p.statut === 'a_valider' && <input type="checkbox" className="sm-chk" checked={sel.includes(p.id)} onClick={e => e.stopPropagation()} onChange={() => toggle(p.id)} />}
-                <div className="sm-thumb">
-                  {p.media_urls[0] ? (isVideo(p.media_urls[0]) ? <video src={p.media_urls[0]} muted preload="metadata" /> : <img src={p.media_urls[0]} alt="" loading="lazy" />) : <span>Sans visuel</span>}
-                  {p.media_urls.length > 1 && <span className="sm-count">{p.media_urls.length} slides</span>}
-                  {p.media_urls[0] && isVideo(p.media_urls[0]) && <span className="sm-count">Vidéo</span>}
-                  <span className="sm-thumb-p"><PlatformDot p={p.plateforme} /></span>
-                </div>
-                <div className="sm-post-b">
-                  <div className="sm-row">
-                    <StatusBadge s={p.statut} />{p.variante && <Badge tone="violet">Variante {p.variante}</Badge>}{!p.genere_par_ia && <Badge>Manuel</Badge>}
-                    <span className="sm-flex1" />{p.prediction && <ScoreRing size={34} value={p.prediction.score_global} />}
+            {items.map(p => {
+              const first = p.media_urls[0]
+              const cover = (p.visuel_spec as Vis | null)?.cover
+              return (
+                <div key={p.id} className={`sm-post${sel.includes(p.id) ? ' sel' : ''}`} onClick={() => setParam('open', p.id)}>
+                  {p.statut === 'a_valider' && <input type="checkbox" className="sm-chk" checked={sel.includes(p.id)} onClick={e => e.stopPropagation()} onChange={() => toggle(p.id)} />}
+                  <div className="sm-thumb">
+                    {first ? (isVideo(first)
+                      ? <video src={mediaSrc(first)} poster={cover ? mediaSrc(cover) : undefined} muted preload="metadata" />
+                      : <MediaImg src={first} />) : <span>Sans visuel</span>}
+                    {p.media_urls.length > 1 && <span className="sm-count">{p.media_urls.length} slides</span>}
+                    {first && isVideo(first) && <span className="sm-count">Vidéo</span>}
+                    <span className="sm-thumb-p"><PlatformDot p={p.plateforme} /></span>
                   </div>
-                  <p className="sm-post-t">{p.contenu}</p>
-                  <div className="sm-post-f"><span>{fmtDateTime(p.scheduled_at)}</span>{p.pilier && <Badge>{prettify(p.pilier)}</Badge>}</div>
-                  {p.erreur && p.statut === 'echec' && <div className="sm-xs" style={{ color: 'var(--err)' }}>{p.erreur.slice(0, 90)}</div>}
+                  <div className="sm-post-b">
+                    <div className="sm-row">
+                      <StatusBadge s={p.statut} />{p.variante && <Badge tone="violet">Variante {p.variante}</Badge>}{!p.genere_par_ia && <Badge>Manuel</Badge>}
+                      <span className="sm-flex1" />{p.prediction && <ScoreRing size={34} value={p.prediction.score_global} />}
+                    </div>
+                    <p className="sm-post-t">{p.contenu}</p>
+                    <div className="sm-post-f"><span>{fmtDateTime(p.scheduled_at)}</span>{p.pilier && <Badge>{prettify(p.pilier)}</Badge>}</div>
+                    {p.erreur && p.statut === 'echec' && <div className="sm-xs" style={{ color: 'var(--err)' }}>{p.erreur.slice(0, 90)}</div>}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
           {more && <div className="sm-center sm-mt"><button className="sm-btn" disabled={loading} onClick={() => load(false)}>{loading ? 'Chargement…' : 'Charger plus'}</button></div>}
         </>
@@ -165,6 +171,8 @@ export function PostEditor({ id, onClose, onChanged }: { id: string; onClose: ()
   const [slots, setSlots] = useState<Slot[]>([])
   const [picker, setPicker] = useState(false)
   const [instr, setInstr] = useState('')
+  const [mi, setMi] = useState(0)
+  const [zoom, setZoom] = useState<string | null>(null)
   const [sys, setSys] = useState<{ ffmpeg: boolean; edge_tts: boolean; unsplash: boolean } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -217,6 +225,7 @@ export function PostEditor({ id, onClose, onChanged }: { id: string; onClose: ()
       setPost(p => p && ({ ...p, media_urls: r.media_urls, visuel_spec: r.visuel_spec }))
       setVisState((r.visuel_spec || {}) as Vis); setVisDirty(false)
     }
+    setMi(0)
     changed()
     return true
   }
@@ -243,7 +252,7 @@ export function PostEditor({ id, onClose, onChanged }: { id: string; onClose: ()
     if (!files?.length) return
     run('upload', async () => { for (const f of Array.from(files)) await social.uploadMedia(id, f); await reload({ keepDraft: true, keepVis: true }); ok('Média ajouté'); changed() })
   }
-  const rmMedia = (u: string) => run('media', async () => { await social.removeMedia(id, u); setPost(p => p && ({ ...p, media_urls: p.media_urls.filter(x => x !== u) })) })
+  const rmMedia = (u: string) => run('media', async () => { await social.removeMedia(id, u); setPost(p => p && ({ ...p, media_urls: p.media_urls.filter(x => x !== u) })); setMi(0) })
 
   const score = async () => {
     setBusy('score')
@@ -266,6 +275,8 @@ export function PostEditor({ id, onClose, onChanged }: { id: string; onClose: ()
   })
   const currentTpl = TEMPLATES.find(t => t.id === tpl)
   const working = busy === 'visuel'
+  const medias = post.media_urls || []
+  const curMedia = medias[Math.min(mi, Math.max(0, medias.length - 1))]
 
   return (
     <Modal wide onClose={onClose}
@@ -285,19 +296,23 @@ export function PostEditor({ id, onClose, onChanged }: { id: string; onClose: ()
       {post.rejet_motif && post.statut === 'rejete' && <div className="sm-note">Rejeté : {post.rejet_motif}</div>}
       {post.statut === 'publication' && <div className="sm-info"><Spinner /> Publication en cours…</div>}
       {isVid && sys && !sys.ffmpeg && <div className="sm-err">ffmpeg est absent du conteneur : aucune vidéo ne peut être montée. Reconstruisez l'image Docker (le Dockerfile fourni l'installe).</div>}
+      {(vis as Vis).erreur_montage && !isVid && <div className="sm-note">Le montage a utilisé un visuel de secours : {(vis as Vis).erreur_montage}</div>}
 
       <div className="pe-layout">
-        {/* ─── Aperçu (toujours visible) ─── */}
+        {/* ─── Aperçu (toujours visible, visuel mis en avant) ─── */}
         <aside className="pe-side">
           {working && <div className="pe-busy"><Spinner /> {isVid ? 'Montage de la vidéo en cours (1 à 3 minutes)…' : 'Montage en cours…'}</div>}
-          <Preview post={post} d={d} brand={post.plateforme} />
-          <div className="sm-card sm-mt"><div className="sm-card-h"><h3>Médias</h3>
+          <Preview post={post} d={d} i={mi} setI={setMi} onZoom={setZoom} />
+          <div className="sm-card sm-mt"><div className="sm-card-h"><h3>Médias ({medias.length})</h3>
             {editable && <><input ref={fileRef} type="file" hidden multiple accept="image/*,video/mp4,video/quicktime" onChange={e => { upload(e.target.files); e.target.value = '' }} />
               <button className="sm-btn xs" disabled={!!busy} onClick={() => fileRef.current?.click()}>{busy === 'upload' ? <Spinner /> : 'Ajouter'}</button></>}
           </div><div className="sm-card-b">
-            {!post.media_urls.length ? <p className="sm-mut sm-xs">Aucun média{['instagram', 'tiktok', 'x'].includes(post.plateforme) ? ' : ce réseau en exige un.' : '.'}</p> : (
-              <div className="sm-media">{post.media_urls.map(u => (
-                <div className="m" key={u}>{isVideo(u) ? <video src={u} /> : <img src={u} alt="" />}{editable && <button onClick={() => rmMedia(u)}>×</button>}</div>
+            {!medias.length ? <p className="sm-mut sm-xs">Aucun média{['instagram', 'tiktok', 'x'].includes(post.plateforme) ? ' : ce réseau en exige un.' : '.'}</p> : (
+              <div className="sm-media">{medias.map((u, k) => (
+                <div className={`m${k === Math.min(mi, medias.length - 1) ? ' on' : ''}`} key={u} onClick={() => setMi(k)}>
+                  {isVideo(u) ? <video src={mediaSrc(u)} muted preload="metadata" /> : <MediaImg src={u} />}
+                  {editable && <button onClick={e => { e.stopPropagation(); rmMedia(u) }}>×</button>}
+                </div>
               ))}</div>
             )}
           </div></div>
@@ -321,6 +336,13 @@ export function PostEditor({ id, onClose, onChanged }: { id: string; onClose: ()
 
           {tab === 'visuel' && (editable ? (
             <div>
+              {curMedia && (
+                <div className="pe-hero">
+                  {isVideo(curMedia)
+                    ? <video src={mediaSrc(curMedia)} poster={vis.cover ? mediaSrc(vis.cover) : undefined} controls playsInline />
+                    : <div className="sm-pv-zoom" onClick={() => setZoom(curMedia)} title="Agrandir"><MediaImg src={curMedia} /></div>}
+                </div>
+              )}
               <div className="pe-bar">
                 <div className="sm-row">{visDirty ? <Badge tone="amber">Modifié, à appliquer</Badge> : <Badge tone="green">À jour</Badge>}</div>
                 <div className="sm-row">
@@ -416,30 +438,41 @@ export function PostEditor({ id, onClose, onChanged }: { id: string; onClose: ()
 
       {picker && <AssetPicker multi={['carrousel', 'video', 'duo'].includes(tpl)} selected={vis.asset_ids || []} onClose={() => setPicker(false)}
         onConfirm={ids => { setVis({ ...vis, asset_ids: ids }); setPicker(false) }} />}
+
+      {zoom && (
+        <div className="sm-lightbox" onClick={() => setZoom(null)}>
+          <button className="sm-x" onClick={() => setZoom(null)}>×</button>
+          {isVideo(zoom)
+            ? <video src={mediaSrc(zoom)} controls autoPlay playsInline onClick={e => e.stopPropagation()} />
+            : <img src={mediaSrc(zoom)} alt="" onClick={e => e.stopPropagation()} />}
+        </div>
+      )}
     </Modal>
   )
 }
 
 /* ───────── Sous-composants ───────── */
-function Preview({ post, d, brand }: { post: Post; d: Draft; brand: string }) {
-  const [i, setI] = useState(0)
+function Preview({ post, d, i, setI, onZoom }: { post: Post; d: Draft; i: number; setI: (n: number) => void; onZoom: (u: string) => void }) {
   const media = post.media_urls || []
   const idx = Math.min(i, Math.max(0, media.length - 1))
   const m = pmeta(post.plateforme)
-  const mediaEl = media.length ? (isVideo(media[idx]) ? <video className="sm-pv-m" src={media[idx]} controls playsInline /> : <img className="sm-pv-m" src={media[idx]} alt="" />) : null
-  const body = (
-    <div className="sm-pv-t">
-      {d.contenu || <span className="sm-mut">Texte du post…</span>}
-      {d.lien && ['facebook', 'linkedin'].includes(post.plateforme) && <div style={{ marginTop: 8, color: '#0a66c2' }}>{d.lien}</div>}
-      {!!d.hashtags.length && <div style={{ marginTop: 8 }}>{d.hashtags.map(h => <span className="h" key={h}>{h} </span>)}</div>}
-    </div>
-  )
+  const cur = media[idx]
+  const cover = (post.visuel_spec as Vis | null)?.cover
+  const mediaEl = cur
+    ? (isVideo(cur)
+      ? <video className="sm-pv-m" src={mediaSrc(cur)} poster={cover ? mediaSrc(cover) : undefined} controls playsInline />
+      : <div className="sm-pv-zoom" onClick={() => onZoom(cur)} title="Cliquer pour agrandir"><MediaImg className="sm-pv-m" src={cur} /></div>)
+    : <div className="sm-pv-empty">Aucun visuel pour ce post</div>
   return (
     <div className="sm-pv">
       <div className="sm-pv-h"><div className="sm-av" style={{ background: m.color }}>{m.label.slice(0, 1)}</div><div><b>{m.label}</b><div className="sm-xs sm-mut">{fmtDateTime(post.scheduled_at)}</div></div></div>
-      {post.plateforme === 'instagram' || post.plateforme === 'tiktok' ? <>{mediaEl}{body}</> : <>{body}{mediaEl}</>}
+      {mediaEl}
       {media.length > 1 && <div className="sm-pv-nav"><button className="sm-btn xs" onClick={() => setI(Math.max(0, idx - 1))}>Préc.</button>{idx + 1} / {media.length}<button className="sm-btn xs" onClick={() => setI(Math.min(media.length - 1, idx + 1))}>Suiv.</button></div>}
-      <span style={{ display: 'none' }}>{brand}</span>
+      <div className="sm-pv-t">
+        {d.contenu || <span className="sm-mut">Texte du post…</span>}
+        {d.lien && ['facebook', 'linkedin'].includes(post.plateforme) && <div style={{ marginTop: 8, color: '#0a66c2' }}>{d.lien}</div>}
+        {!!d.hashtags.length && <div style={{ marginTop: 8 }}>{d.hashtags.map(h => <span className="h" key={h}>{h} </span>)}</div>}
+      </div>
     </div>
   )
 }

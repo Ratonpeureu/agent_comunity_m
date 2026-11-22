@@ -108,3 +108,33 @@ def enc(data: dict) -> bytes:
 
 def dec(blob: bytes) -> dict:
     return json.loads(_fernet().decrypt(blob).decode())
+
+
+
+
+
+# ── Formats de publication par réseau ─────────────────────────────────────────
+FORMATS = ("texte", "image", "carrousel", "video")
+ALLOWED_FORMATS = {
+    "linkedin": FORMATS,
+    "facebook": FORMATS,
+    "instagram": ("image", "carrousel", "video"),
+    "x": ("image", "video"),
+    "tiktok": ("video", "carrousel"),
+}
+DEFAULT_FORMAT = {"tiktok": "video"}          # les autres réseaux : None = l'IA choisit
+
+
+def norm_format(platform: str, fmt=None):
+    allowed = ALLOWED_FORMATS.get(platform, FORMATS)
+    f = (fmt or "").strip().lower()
+    if not f:
+        return DEFAULT_FORMAT.get(platform)
+    if f in allowed:
+        return f
+    return "image" if "image" in allowed else allowed[0]
+
+
+
+
+

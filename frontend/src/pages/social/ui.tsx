@@ -1,8 +1,7 @@
 // src/pages/social/ui.tsx
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { BASE_URL } from '../../lib/api'
-import { errMsg, pmeta, PLATFORMS, Platform, STATUS_META, waitJob } from '../../lib/social'
-
+import { errMsg, mediaSrc, pmeta, PLATFORMS, Platform, STATUS_META, waitJob } from '../../lib/social'
 /* ───────── Contexte : toasts, jobs en cours, rafraîchissement ───────── */
 interface Ctx {
   ok: (m: string) => void
@@ -293,6 +292,23 @@ export function AuthImg({ path, alt = '', className, style }: { path: string; al
 
   if (src) return <img src={src} alt={alt} className={className} style={style} />
   return <div ref={ref} className={`sm-imgph ${className || ''}`} style={style}>{bad ? '' : <Spinner />}</div>
+}
+
+/** Image de média publié : chemin relatif + message clair si le fichier est introuvable. */
+export function MediaImg({ src, alt = '', className, style }: { src?: string | null; alt?: string; className?: string; style?: React.CSSProperties }) {
+  const [bad, setBad] = useState(false)
+  useEffect(() => { setBad(false) }, [src])
+  const s = mediaSrc(src)
+  if (!s || bad) return <div className={`sm-imgph ${className || ''}`} style={style} title={src || ''}>Visuel indisponible</div>
+  return <img src={s} alt={alt} className={className} style={style} loading="lazy" onError={() => setBad(true)} />
+}
+
+
+/** Badge officiel « Powered by Groq » ; repli sur un pastille orange si l'image n'est pas joignable. */
+export function GroqLogo({ height = 22 }: { height?: number }) {
+  const [bad, setBad] = useState(false)
+  if (!bad) return <img src="https://console.groq.com/powered-by-groq.svg" alt="Powered by Groq" height={height} style={{ display: 'block', height }} onError={() => setBad(true)} />
+  return <span className="sm-groq"><span className="g">G</span><b>Groq</b></span>
 }
 
 export async function copyText(t: string): Promise<boolean> {

@@ -1,8 +1,8 @@
 // src/pages/social/Media.tsx
 import React, { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fmtDateTime, MediaItem, prettify, social } from '../../lib/social'
-import { AuthImg, Badge, Empty, Loading, Modal, PageHead, Pills, PlatformIcon, Stat, StatusBadge, useLoad, useSocial } from './ui'
+import { fmtDateTime, MediaItem, mediaSrc, prettify, social } from '../../lib/social'
+import { AuthImg, Badge, Empty, Loading, MediaImg, Modal, PageHead, Pills, PlatformIcon, Stat, StatusBadge, useLoad, useSocial } from './ui'
 
 const KINDS = [
   { id: '', label: 'Tout' }, { id: 'capture', label: 'Captures du logiciel' }, { id: 'logo', label: 'Logos' },
@@ -13,12 +13,12 @@ const fmtSize = (n?: number | null) => (n == null ? '' : n < 1048576 ? `${Math.r
 
 function Thumb({ m, big }: { m: MediaItem; big?: boolean }) {
   if (m.kind === 'audio') return big
-    ? <audio src={m.url!} controls style={{ width: '100%' }} />
+    ? <audio src={mediaSrc(m.url)} controls style={{ width: '100%' }} />
     : <div className="mm-audio"><span>♪</span><small>{m.title}</small></div>
-  if (m.kind === 'video') return <video src={m.url!} poster={m.poster || undefined} muted={!big} controls={big} loop playsInline preload={big ? 'auto' : 'none'}
+  if (m.kind === 'video') return <video src={mediaSrc(m.url)} poster={m.poster ? mediaSrc(m.poster) : undefined} muted={!big} controls={big} loop playsInline preload={big ? 'auto' : 'none'}
     style={{ width: '100%', height: big ? 'auto' : '100%', objectFit: big ? 'contain' : 'cover', maxHeight: big ? '70vh' : undefined }} />
   if (m.private_path) return <AuthImg path={m.private_path} alt={m.title} style={big ? { width: '100%', height: 'auto', maxHeight: '70vh', objectFit: 'contain' } : undefined} />
-  return <img src={m.url!} alt={m.title} loading="lazy" style={big ? { width: '100%', maxHeight: '70vh', objectFit: 'contain' } : undefined} />
+  return <MediaImg src={m.url} alt={m.title} style={big ? { width: '100%', height: 'auto', maxHeight: '70vh', objectFit: 'contain' } : undefined} />
 }
 
 function Card({ m, onOpen }: { m: MediaItem; onOpen: () => void }) {
@@ -99,7 +99,7 @@ export function Media() {
       {open && (
         <Modal wide title={open.title} onClose={() => setOpen(null)}
           footer={<>{open.post && <button className="sm-btn pri" onClick={() => nav(`/social-agent/posts?open=${open.post!.id}`)}>Ouvrir le post</button>}
-            {open.url && <a className="sm-btn" href={open.url} target="_blank" rel="noreferrer">Ouvrir le fichier ↗</a>}
+            {open.url && <a className="sm-btn" href={mediaSrc(open.url)} target="_blank" rel="noreferrer">Ouvrir le fichier ↗</a>}
             <button className="sm-btn" onClick={() => setOpen(null)}>Fermer</button></>}>
           <div className="sm-split">
             <div style={{ background: '#0b1020', borderRadius: 12, padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Thumb m={open} big /></div>

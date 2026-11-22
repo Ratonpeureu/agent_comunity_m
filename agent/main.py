@@ -39,6 +39,8 @@ if CONFIGURED:
     from agent.services.social import social_assets as assets
     from agent.services.social import social_patches
     from agent.services.social.social_config import utcnow
+    from agent.routes.hoock_admin_social_ai import router as social_ai_router
+    from agent.routes.hoock_admin_social_config import router as social_config_router
 
     social_patches.apply()
     from agent.services.social import social_extras
@@ -83,6 +85,8 @@ if CONFIGURED:
     app.include_router(social_connect_router)
     app.include_router(extra_router)
     app.include_router(social_extras.router)
+    app.include_router(social_ai_router)
+    app.include_router(social_config_router)
     app.mount("/uploads", StaticFiles(directory=str(UPLOAD_ROOT)), name="uploads")
 
 

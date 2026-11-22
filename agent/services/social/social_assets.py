@@ -137,13 +137,16 @@ VISION_SCHEMA = """{
 Donne 3 angles_posts et 3 legendes_montage."""
 
 
-def _client():
-    from groq import Groq
-    key = os.getenv("GROQ_API_KEY_FACTURE") or os.getenv("GROQ_API_KEY")
-    if not key:
-        raise RuntimeError("GROQ_API_KEY_FACTURE non configurée")
-    return Groq(api_key=key)
 
+def _client(exclude=()):
+    from groq import Groq
+    from agent.services.llm_client import llm_usage as U
+    kid, key = U.pick_key("vision", exclude)
+    if not key:
+        raise RuntimeError("Aucune clé Groq disponible (Paramètres › Clés API ou Configuration)")
+    c = Groq(api_key=key)
+    c._kid = kid
+    return c
 
 def _encode(path: Path):
     img = Image.open(path)
@@ -162,28 +165,53 @@ def _encode(path: Path):
         side = int(side * 0.8)
     return "data:image/jpeg;base64," + base64.b64encode(data).decode(), w, h, rgb
 
+
 def _call_vision(client, data_url: str, prompt: str) -> str:
     import groq
+    from agent.services.llm_client import llm_usage as U
+    model = U.model_for("vision", VISION_MODEL)
     messages = [{"role": "user", "content": [{"type": "text", "text": prompt},
                                               {"type": "image_url", "image_url": {"url": data_url}}]}]
     variants = [{"response_format": {"type": "json_object"}}, {}]
-    last = None
+    last, tried = None, set()
     for extra in variants:
         for retry in range(4):
+            U.check_budget()
+            kid = getattr(client, "_kid", "env")
+            t0 = time.time()
             try:
-                r = client.chat.completions.create(model=VISION_MODEL, messages=messages, temperature=0.2,
+                r = client.chat.completions.create(model=model, messages=messages, temperature=0.2,
                                                    max_completion_tokens=3000, stream=False, **extra)
+                u = getattr(r, "usage", None)
+                U.record("vision", kid, model, getattr(u, "prompt_tokens", 0) or 0,
+                         getattr(u, "completion_tokens", 0) or 0, True, 200, int((time.time() - t0) * 1000))
                 return r.choices[0].message.content or ""
             except groq.RateLimitError as e:
                 last = e
+                U.record("vision", kid, model, 0, 0, False, 429, int((time.time() - t0) * 1000), str(e))
+                if U.classify_error(429, str(e)) == "exhausted":
+                    U.mark_key(kid, "epuise", str(e)[:200], 3600)
+                    tried.add(kid)
+                    client = _client(tried)
+                    continue
                 time.sleep(15 * (retry + 1))
+            except (groq.AuthenticationError, groq.PermissionDeniedError) as e:
+                last = e
+                U.record("vision", kid, model, 0, 0, False, 401, int((time.time() - t0) * 1000), str(e))
+                U.mark_key(kid, "invalide", str(e)[:200])
+                tried.add(kid)
+                client = _client(tried)
+                continue
             except groq.BadRequestError as e:      # option non supportée → variante suivante
                 last = e
                 break
             except (groq.APIStatusError, groq.APIConnectionError) as e:
                 last = e
+                U.record("vision", kid, model, 0, 0, False, getattr(e, "status_code", 0) or 0,
+                         int((time.time() - t0) * 1000), str(e))
                 time.sleep(5)
-    raise RuntimeError(f"Groq vision a échoué ({VISION_MODEL}) : {last}")
+    raise RuntimeError(f"Groq vision a échoué ({model}) : {last}")
+
 
 def _parse_json(text: str) -> dict:
     text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.S)

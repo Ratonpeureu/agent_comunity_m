@@ -1,6 +1,6 @@
 // src/pages/social/Library.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { asArr, AssetFull, Asset, Box, errMsg, PLATFORMS,isVideo, Platform, pmeta, prettify, social, TEMPLATES } from '../../lib/social'
+import { asArr, AssetFull, Asset, Box, errMsg, PLATFORMS, isVideo, mediaSrc, Platform, pmeta, prettify, social, TEMPLATES } from '../../lib/social'
 import { AssetPicker } from './AssetPicker'
 import { AuthImg, Badge, Empty, Field, Loading, Modal, PageHead, Pills, PlatformPicker, Spinner, Stat, Switch, TagInput, useLoad, useSocial } from './ui'
 
@@ -245,18 +245,12 @@ export function MontageStudio({ initialAssets = [], onClose }: { initialAssets?:
             <div className="sm-prevs">
               {urls.map(u =>
                 isVideo(u) ? (
-                  <video
-                    key={u}
-                    src={u}
-                    controls
-                    playsInline
-                    preload="metadata"
-                    style={{ width: '100%', borderRadius: 10, display: 'block' }}
-                  />
+                  <video key={u} src={mediaSrc(u)} controls playsInline preload="metadata" style={{ width: '100%', borderRadius: 10, display: 'block' }} />
                 ) : (
-                  <img key={u} src={u} alt="aperçu" />
+                  <img key={u} src={mediaSrc(u)} alt="aperçu" />
                 )
               )}
+
             </div>
           ) : (
             <Empty title="Aperçu">Aucun visuel pour l'instant. Aucun post n'est créé : c'est un test.</Empty>

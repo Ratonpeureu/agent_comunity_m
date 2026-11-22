@@ -8,7 +8,7 @@ from agent.bootstrap import DATA_DIR
 from agent.services.social import social_agent_service as svc
 from agent.services.social import social_assets as assets
 from agent.services.social.social_config import TZ
-
+from agent.services.llm_client import llm_usage
 log = logging.getLogger("scheduler")
 _bg: set = set()
 
@@ -58,6 +58,8 @@ async def run_forever():
                 _spawn(svc.refresh_tokens())
             if due("scan", 6 * 3600):
                 _spawn(asyncio.to_thread(assets.scan_once, 15))
+            if due("purge_ai", 24 * 3600):
+                _spawn(asyncio.to_thread(llm_usage.purge))
             await _weekly()
         except asyncio.CancelledError:
             raise

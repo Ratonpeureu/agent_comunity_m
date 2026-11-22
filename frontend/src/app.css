@@ -15,3 +15,12 @@ a{color:inherit}
 .lg-card button{background:#4f46e5;color:#fff;border:0;border-radius:10px;padding:11px;font-weight:700;cursor:pointer}
 .lg-card button:disabled{opacity:.6}
 .lg-err{background:#fee2e2;color:#b91c1c;border-radius:10px;padding:9px 12px;font-weight:600}
+
+
+/* ───────── Pied de page collé en bas ───────── */
+.app-shell{min-height:100vh;display:flex;flex-direction:column}
+.app-main{flex:1;width:100%}
+.app-coffee{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:6px 13px;background:#FFDD00;color:#12151c;font-weight:700;font-size:13px;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.app-coffee:hover{transform:translateY(-1px) rotate(-2deg);box-shadow:0 6px 16px rgba(255,221,0,.45)}
+.app-coffee .ft-cup{animation:ftWobble 3.2s ease-in-out infinite}
+
