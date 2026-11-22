@@ -104,8 +104,8 @@ Aucune dépendance Redis ou Celery : les tâches de fond et le planificateur tou
 **Prérequis** : Docker et Docker Compose, un domaine en **HTTPS** (les réseaux téléchargent les médias depuis ton URL publique).
 
 ```bash
-git clone https://github.com/<ton-compte>/<ton-repo>.git
-cd <ton-repo>
+git clone https://github.com/Ratonpeureu/agent_comunity_m.git
+cd agent_comunity_m
 docker compose up -d --build
 ```
 
@@ -119,7 +119,7 @@ Les données (base SQLite, configuration, captures, médias générés) sont sto
 
 ## Premier démarrage
 
-1. Ouvre `http://<ton-serveur>:8080` : tu es redirigé vers **`/setup`**.
+1. Ouvre `http://localhost:8080` : tu es redirigé vers **`/setup`**.
 2. Renseigne :
    - l'identifiant et le mot de passe administrateur (8 caractères minimum) ;
    - l'**URL publique** HTTPS de l'application ;
@@ -206,7 +206,7 @@ Actualités (Serper) ───────────────────�
 
 ---
 
-## Développement local
+## Développement local /// Fork depuis GITHUB
 
 **Frontend** (proxy vers l'API sur le port 8080) :
 
@@ -283,7 +283,3 @@ ffmpeg doit être installé pour les vidéos.
 | Un redémarrage interrompt un job | Les jobs en cours sont marqués « échec » au redémarrage : relance-les. |
 
 ---
-
-## Licence
-
-À définir (par exemple MIT).
