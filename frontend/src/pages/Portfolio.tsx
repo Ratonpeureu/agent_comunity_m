@@ -1,10 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react'
 import nagoraLogo from '../assets/Nagora_logo.jpg'
 import rhLogo from '../assets/logo_rh_manager.png'
+import cmLogo from '../assets/logo.png'
+import shotIdees from '../assets/idees.png'
+import shotPosts from '../assets/posts.png'
+import shotCalendrier from '../assets/calendrier.png'
+import shotMediatheque from '../assets/mediatheque.png'
 
 const EMAIL = 'gorasow026@gmail.com'
 const LINKEDIN = 'https://www.linkedin.com/in/mak-gora-b7a6a2176'
 const RH_URL = 'https://rhmanager.site'
+
+const SHOTS = [
+  { src: shotIdees, label: 'Idées de publications' },
+  { src: shotPosts, label: 'Posts' },
+  { src: shotCalendrier, label: 'Calendrier éditorial' },
+  { src: shotMediatheque, label: 'Médiathèque' },
+]
 
 /* Apparition au défilement */
 function useInView<T extends HTMLElement>() {
@@ -16,7 +28,7 @@ function useInView<T extends HTMLElement>() {
     if (typeof IntersectionObserver === 'undefined') { setSeen(true); return }
     const io = new IntersectionObserver(es => {
       if (es.some(e => e.isIntersecting)) { setSeen(true); io.disconnect() }
-    }, { threshold: 0.15 })
+    }, { threshold: 0.12 })
     io.observe(el)
     const t = setTimeout(() => setSeen(true), 5000)
     return () => { io.disconnect(); clearTimeout(t) }
@@ -67,65 +79,74 @@ export default function Portfolio() {
     <div className="pf">
       <style>{CSS}</style>
 
-      <header className="pf-top">
-        <div className="pf-wrap pf-top-in">
-          <a href="/" className="pf-brand"><i />Gora Mak Sow</a>
-          <nav>
-            <a href="#logiciel">RH Manager</a>
-            <a href="#histoire">Pourquoi</a>
-            <a href="#nagora">Nagora SARL</a>
-            <a href="#contact">Contact</a>
-          </nav>
-        </div>
-      </header>
-
-      {/* ───────── Hero ───────── */}
+      {/* ───────── Présentation ───────── */}
       <section className="pf-hero">
         <div className="pf-orb o1" aria-hidden="true" />
         <div className="pf-orb o2" aria-hidden="true" />
         <div className="pf-wrap pf-hero-in">
-          <div className="pf-logos">
-            <img src={nagoraLogo} alt="Logo Nagora SARL" />
-            <img src={rhLogo} alt="Logo RH Manager" />
-          </div>
+          <div className="pf-eye">Portfolio</div>
           <h1 aria-label="Gora Mak Sow">
             <span>Gora</span> <span className="g">Mak</span> <span>Sow</span>
           </h1>
-          <p className="pf-lead">Je crée des logiciels. Le plus important : <b>RH Manager</b>.</p>
+          <p className="pf-lead">Autodidacte, je crée des logiciels. J'ai appris la programmation seul, jusqu'à monter ma propre société, Nagora SARL.</p>
           <div className="pf-cta">
-            <a className="pf-btn p" href={RH_URL} target="_blank" rel="noreferrer">Découvrir RH Manager <span>→</span></a>
-            <a className="pf-btn" href={LINKEDIN} target="_blank" rel="noreferrer">Mon profil LinkedIn <span>↗</span></a>
+            <a className="pf-btn p" href={LINKEDIN} target="_blank" rel="noreferrer">Mon profil LinkedIn <span>↗</span></a>
+            <a className="pf-btn" href={`mailto:${EMAIL}`}>Me contacter <span>→</span></a>
           </div>
         </div>
       </section>
 
-      {/* ───────── RH Manager ───────── */}
-      <section id="logiciel" className="pf-sec">
-        <div className="pf-wrap pf-flag">
+      {/* ───────── Parcours ───────── */}
+      <section className="pf-sec">
+        <div className="pf-wrap">
           <Reveal>
-            <div className="pf-eye">Le logiciel phare</div>
-            <h2>J'ai beaucoup de logiciels. Un seul est en tête.</h2>
-            <p>RH Manager est celui que je mets en avant. Il est né d'un besoin réel, d'abord le mien, puis celui de mon entreprise.</p>
+            <div className="pf-eye">Qui je suis</div>
+            <h2>Un parcours construit seul.</h2>
           </Reveal>
-          <Reveal>
-            <a className="pf-card" href={RH_URL} target="_blank" rel="noreferrer">
-              <span className="pf-tag">Logiciel phare</span>
-              <div className="pf-tile"><img src={rhLogo} alt="RH Manager" /></div>
-              <h3>RH Manager</h3>
-              <span className="pf-url">rhmanager.site ↗</span>
-            </a>
-          </Reveal>
+          <div className="pf-cols">
+            <Reveal>
+              <p>Ma formation de départ est le droit, avec un niveau Master. La programmation, je ne l'ai pas apprise à l'école : je me la suis enseignée moi-même, projet après projet.</p>
+            </Reveal>
+            <Reveal>
+              <p>Cet apprentissage m'a mené jusqu'à créer ma société, Nagora SARL. J'ai aujourd'hui de nombreux logiciels, dont deux que je mets en avant ici : Agent CM et RH Manager.</p>
+            </Reveal>
+          </div>
         </div>
       </section>
 
-      {/* ───────── Histoire ───────── */}
-      <section id="histoire" className="pf-sec alt">
+      {/* ───────── Agent CM ───────── */}
+      <section className="pf-sec alt">
         <div className="pf-wrap">
           <Reveal>
-            <div className="pf-eye">Pourquoi ce logiciel existe</div>
-            <h2>Tout est parti de LinkedIn.</h2>
-            <p>Avant RH Manager, j'avais déjà une version personnelle, utilisée uniquement pour LinkedIn. Elle m'a permis de publier plus de 87 posts et de faire passer mon compte de 150 à 1450 relations.</p>
+            <div className="pf-brandrow">
+              <div className="pf-tile"><img src={cmLogo} alt="Logo Agent CM" /></div>
+              <div>
+                <div className="pf-eye">Logiciel</div>
+                <h2 style={{ margin: '6px 0 0' }}>Agent CM</h2>
+              </div>
+            </div>
+            <p className="pf-big">Mon community manager IA. Il apprend la marque, propose des idées, rédige les posts, prépare les visuels et programme les publications.</p>
           </Reveal>
+
+          <div className="pf-cols">
+            <Reveal>
+              <h3 className="pf-h3">Ce qu'il fait</h3>
+              <ul className="pf-list">
+                <li>Analyse le site de la marque pour comprendre son identité et son ton.</li>
+                <li>Propose des idées de publications.</li>
+                <li>Rédige une version adaptée à chaque réseau.</li>
+                <li>Fabrique les visuels et les vidéos.</li>
+                <li>Programme les publications dans un calendrier éditorial.</li>
+                <li>Suit les résultats pour s'améliorer.</li>
+              </ul>
+              <p className="pf-nets">LinkedIn · Facebook · Instagram · X · TikTok</p>
+            </Reveal>
+            <Reveal>
+              <h3 className="pf-h3">Pourquoi je l'ai créé</h3>
+              <p>Au départ, j'avais une version personnelle, utilisée uniquement pour LinkedIn. Elle m'a permis de publier plus de 87 posts et de faire passer mon compte de 150 à 1450 relations.</p>
+              <p>Puis Nagora SARL a grandi. Il a fallu gérer son image et sa présence sur les réseaux sociaux. C'est comme ça que cet outil personnel est devenu Agent CM.</p>
+            </Reveal>
+          </div>
 
           <Reveal className="pf-nums">
             <div className="pf-num"><Count to={87} plus /><small>posts LinkedIn publiés</small></div>
@@ -138,34 +159,62 @@ export default function Portfolio() {
             <div className="pf-bar"><span>Après</span><div className="pf-track"><div className="pf-fill b">1450</div></div></div>
           </div>
 
-          <ol className="pf-steps">
-            <li><Reveal><h3>Une version personnelle</h3><p>Un outil pour moi seul, dédié à LinkedIn.</p></Reveal></li>
-            <li><Reveal><h3>87+ posts, 1450 relations</h3><p>Publier plus a fait passer mon compte de 150 à 1450 relations.</p></Reveal></li>
-            <li><Reveal><h3>Nagora SARL grandit</h3><p>Il a fallu gérer l'image de la société et sa présence sur les réseaux sociaux.</p></Reveal></li>
-            <li><Reveal><h3>RH Manager</h3><p>Le logiciel qui répond à ce besoin et que je mets aujourd'hui en avant.</p></Reveal></li>
-          </ol>
+          <Reveal className="pf-shots">
+            {SHOTS.map(s => (
+              <figure key={s.label} className="pf-shot">
+                <div className="pf-img"><img src={s.src} alt={`Agent CM : ${s.label}`} loading="lazy" /></div>
+                <figcaption>{s.label}</figcaption>
+              </figure>
+            ))}
+          </Reveal>
         </div>
       </section>
 
-      {/* ───────── Nagora ───────── */}
-      <section id="nagora" className="pf-sec">
-        <div className="pf-wrap pf-flag">
+      {/* ───────── RH Manager ───────── */}
+      <section className="pf-sec">
+        <div className="pf-wrap">
           <Reveal>
-            <div className="pf-eye">Ma société</div>
-            <h2>Nagora SARL</h2>
-            <p>En grandissant, Nagora SARL a demandé de gérer son image et sa présence sur les réseaux sociaux. C'est ce besoin qui a donné RH Manager.</p>
+            <div className="pf-brandrow">
+              <div className="pf-tile"><img src={rhLogo} alt="Logo RH Manager" /></div>
+              <div>
+                <div className="pf-eye">Logiciel</div>
+                <h2 style={{ margin: '6px 0 0' }}>RH Manager</h2>
+              </div>
+            </div>
+            <p className="pf-big">Un logiciel de gestion des ressources humaines, proposé sous forme de portail entreprise.</p>
+          </Reveal>
+          <Reveal className="pf-chips">
+            <span>Pointages</span>
+            <span>Documents</span>
+            <span>Visioconférence</span>
+            <span>Messagerie interne chiffrée</span>
           </Reveal>
           <Reveal>
-            <div className="pf-card static">
-              <div className="pf-tile"><img src={nagoraLogo} alt="Nagora SARL" /></div>
-              <h3>Nagora SARL</h3>
+            <p style={{ marginTop: 24 }}>
+              <a className="pf-btn p" href={RH_URL} target="_blank" rel="noreferrer">Voir rhmanager.site <span>↗</span></a>
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ───────── Nagora SARL ───────── */}
+      <section className="pf-sec alt">
+        <div className="pf-wrap">
+          <Reveal>
+            <div className="pf-brandrow">
+              <div className="pf-tile"><img src={nagoraLogo} alt="Logo Nagora SARL" /></div>
+              <div>
+                <div className="pf-eye">Ma société</div>
+                <h2 style={{ margin: '6px 0 0' }}>Nagora SARL</h2>
+              </div>
             </div>
+            <p className="pf-big">La société que j'ai montée après avoir appris la programmation par moi-même.</p>
           </Reveal>
         </div>
       </section>
 
       {/* ───────── Contact ───────── */}
-      <section id="contact" className="pf-sec alt">
+      <section className="pf-sec">
         <div className="pf-wrap">
           <Reveal>
             <div className="pf-eye">Contact</div>
@@ -181,13 +230,6 @@ export default function Portfolio() {
           </Reveal>
         </div>
       </section>
-
-      <footer className="pf-foot">
-        <div className="pf-wrap pf-foot-in">
-          <span>Gora Mak Sow · Nagora SARL</span>
-          <a href={RH_URL} target="_blank" rel="noreferrer">rhmanager.site</a>
-        </div>
-      </footer>
     </div>
   )
 }
@@ -204,61 +246,49 @@ const CSS = `
 .pf *{box-sizing:border-box}
 .pf a{color:inherit}
 .pf a:focus-visible,.pf button:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:8px}
-.pf-wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.pf-wrap{max-width:1000px;margin:0 auto;padding:0 20px}
 .pf h1,.pf h2,.pf h3{font-family:var(--d);line-height:1.05;margin:0;letter-spacing:-.02em;text-wrap:balance}
-.pf p{margin:0 0 1em;max-width:60ch;color:var(--muted)}
+.pf p{margin:0 0 1em;max-width:62ch;color:var(--muted)}
 .pf-eye{font-size:.78rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
-.pf h2{font-size:clamp(2rem,5vw,3.4rem);font-weight:800;margin:10px 0 20px;max-width:18ch}
+.pf h2{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;margin:10px 0 20px}
+.pf-h3{font-size:1.3rem;font-weight:800;margin-bottom:12px!important}
 
-.pf-top{position:sticky;top:0;z-index:20;background:rgba(8,16,14,.8);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.pf-top-in{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;padding-bottom:12px}
-.pf-brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--d);font-weight:800}
-.pf-brand i{width:12px;height:12px;border-radius:50%;background:var(--accent);animation:pfPulse 2.4s infinite}
-@keyframes pfPulse{0%{box-shadow:0 0 0 0 rgba(52,216,164,.6)}70%{box-shadow:0 0 0 12px rgba(52,216,164,0)}100%{box-shadow:0 0 0 0 rgba(52,216,164,0)}}
-.pf-top nav{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
-.pf-top nav a{text-decoration:none;font-size:.9rem;color:var(--muted);padding:6px 10px;border-radius:999px}
-.pf-top nav a:hover{color:var(--fg);background:var(--bg2)}
-
-.pf-hero{position:relative;overflow:hidden;padding:clamp(48px,9vw,110px) 0 clamp(48px,8vw,96px);border-bottom:1px solid var(--line)}
+.pf-hero{position:relative;overflow:hidden;padding:clamp(64px,11vw,130px) 0 clamp(56px,9vw,100px);border-bottom:1px solid var(--line)}
 .pf-orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;pointer-events:none}
 .pf-orb.o1{width:420px;height:420px;background:#0f8f6a;top:-140px;right:-100px;animation:pfFloat 9s ease-in-out infinite}
 .pf-orb.o2{width:320px;height:320px;background:#8a5a00;bottom:-140px;left:-80px;opacity:.28;animation:pfFloat 11s ease-in-out infinite reverse}
 @keyframes pfFloat{50%{transform:translate(-30px,34px) scale(1.12)}}
 .pf-hero-in{position:relative;display:grid;gap:22px}
-.pf-logos{display:flex;gap:14px;align-items:center;animation:pfUp .8s both}
-.pf-logos img{height:56px;width:auto;max-width:140px;object-fit:contain;background:#fff;border-radius:14px;padding:8px}
-.pf-hero h1{font-size:clamp(3rem,11vw,7.4rem);font-weight:800}
+.pf-hero h1{font-size:clamp(3rem,11vw,7rem);font-weight:800}
 .pf-hero h1 span{display:inline-block;animation:pfUp .9s cubic-bezier(.2,.8,.2,1) both}
 .pf-hero h1 span:nth-child(2){animation-delay:.12s}
 .pf-hero h1 span:nth-child(3){animation-delay:.24s}
 .pf-hero h1 .g{color:var(--accent)}
 @keyframes pfUp{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:none}}
-.pf-lead{font-size:clamp(1.15rem,2.4vw,1.5rem);max-width:30ch;animation:pfUp .9s .4s both}
-.pf-lead b{color:var(--fg);font-weight:600}
-.pf-cta{display:flex;gap:12px;flex-wrap:wrap;animation:pfUp .9s .55s both}
+.pf-lead{font-size:clamp(1.1rem,2.3vw,1.4rem);max-width:36ch;color:var(--fg)!important;animation:pfUp .9s .4s both}
+.pf-cta{display:flex;gap:12px;flex-wrap:wrap}
+.pf-hero .pf-cta{animation:pfUp .9s .55s both}
 .pf-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:999px;text-decoration:none;font-weight:600;border:1.5px solid var(--fg);transition:transform .2s,box-shadow .2s}
 .pf-btn:hover{transform:translateY(-3px)}
 .pf-btn.p{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .pf-btn.p:hover{box-shadow:0 10px 30px -8px rgba(52,216,164,.7)}
 .pf-btn span{transition:transform .2s}.pf-btn:hover span{transform:translateX(4px)}
 
-.pf-sec{padding:clamp(56px,9vw,100px) 0}
+.pf-sec{padding:clamp(52px,8vw,92px) 0}
 .pf-sec.alt{background:var(--bg2);border-block:1px solid var(--line)}
-.pf-flag{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,5vw,60px);align-items:center}
-.pf-flag>*{min-width:0}
+.pf-cols{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,4vw,48px);margin-top:8px}
+.pf-cols>*{min-width:0}
+.pf-big{font-size:clamp(1.1rem,2.2vw,1.35rem);color:var(--fg)!important;max-width:44ch!important;margin-top:18px!important}
+.pf-brandrow{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.pf-tile{display:inline-flex;background:#fff;border-radius:18px;padding:12px}
+.pf-tile img{display:block;height:68px;width:auto;max-width:160px;object-fit:contain}
+.pf-list{margin:0 0 14px;padding-left:1.2em;color:var(--muted)}
+.pf-list li{margin-bottom:6px}
+.pf-nets{font-size:.88rem;font-weight:600;letter-spacing:.06em;color:var(--accent)!important}
 
-.pf-card{display:block;position:relative;overflow:hidden;text-decoration:none;border:1px solid var(--line);background:var(--card);border-radius:22px;padding:clamp(22px,4vw,36px);transition:transform .35s,box-shadow .35s}
-.pf-card:not(.static):hover{transform:translateY(-6px);box-shadow:0 30px 60px -30px rgba(52,216,164,.5)}
-.pf-card::after{content:"";position:absolute;width:240px;height:240px;right:-90px;top:-90px;border-radius:50%;background:radial-gradient(circle,rgba(52,216,164,.3),transparent 70%);animation:pfFloat 7s ease-in-out infinite}
-.pf-card h3{position:relative;font-size:clamp(2rem,4.6vw,2.8rem);font-weight:800;margin-top:18px}
-.pf-tag{position:relative;display:inline-block;font-size:.74rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;border-radius:999px;background:var(--accent);color:var(--accent-ink);margin-bottom:16px}
-.pf-tile{position:relative;display:inline-flex;background:#fff;border-radius:18px;padding:14px}
-.pf-tile img{display:block;height:84px;width:auto;max-width:100%;object-fit:contain}
-.pf-url{position:relative;display:inline-block;margin-top:10px;font-family:var(--d);font-weight:800;color:var(--accent)}
-
-.pf-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:32px}
+.pf-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:36px}
 .pf-num{border:1px solid var(--line);background:var(--card);border-radius:18px;padding:22px}
-.pf-num b{display:block;font-family:var(--d);font-size:clamp(2.6rem,6vw,3.8rem);line-height:1;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+.pf-num b{display:block;font-family:var(--d);font-size:clamp(2.6rem,6vw,3.6rem);line-height:1;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
 .pf-num small{display:block;margin-top:8px;color:var(--muted);font-size:.95rem}
 .pf-bars{display:grid;gap:14px;margin-top:16px;border:1px solid var(--line);background:var(--card);border-radius:18px;padding:22px}
 .pf-bar{display:grid;grid-template-columns:70px 1fr;gap:14px;align-items:center}
@@ -270,29 +300,27 @@ const CSS = `
 .pf-bars.in .pf-fill.a{width:10.34%}
 .pf-bars.in .pf-fill.b{width:100%}
 
-.pf-steps{list-style:none;margin:36px 0 0;padding:0;position:relative}
-.pf-steps::before{content:"";position:absolute;left:11px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--accent),var(--warm))}
-.pf-steps li{position:relative;padding:0 0 30px 48px}
-.pf-steps li:last-child{padding-bottom:0}
-.pf-steps li::before{content:"";position:absolute;left:3px;top:6px;width:18px;height:18px;border-radius:50%;background:var(--bg2);border:3px solid var(--accent)}
-.pf-steps h3{font-size:1.35rem;font-weight:800;margin-bottom:6px}
-.pf-steps p{margin:0}
+.pf-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:36px}
+.pf-shot{margin:0;min-width:0}
+.pf-img{overflow:hidden;border-radius:14px;border:1px solid var(--line);background:var(--card)}
+.pf-img img{display:block;width:100%;height:auto;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.pf-shot:hover .pf-img img{transform:scale(1.05)}
+.pf-shot figcaption{margin-top:8px;font-size:.85rem;color:var(--muted)}
+
+.pf-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.pf-chips span{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 16px;font-weight:600;font-size:.95rem}
 
 .pf-mail{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .pf-addr{font-family:var(--d);font-weight:800;font-size:clamp(1.3rem,4.4vw,2.3rem);word-break:break-all;user-select:all}
 .pf-cp{cursor:pointer;font:inherit;font-size:.9rem;font-weight:600;padding:8px 16px;border-radius:999px;border:1.5px solid var(--fg);background:transparent;color:var(--fg)}
 .pf-cp:hover{background:var(--fg);color:var(--bg)}
 
-.pf-foot{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-size:.9rem}
-.pf-foot-in{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-
 .pf-rv{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
 .pf-rv.in{opacity:1;transform:none}
 
 @media (max-width:760px){
-  .pf-flag{grid-template-columns:1fr}
+  .pf-cols{grid-template-columns:1fr}
   .pf-bar{grid-template-columns:1fr;gap:6px}
-  .pf-top nav a:not(:last-child){display:none}
 }
 @media (prefers-reduced-motion:reduce){
   .pf *,.pf *::after{animation:none!important;transition:none!important}
