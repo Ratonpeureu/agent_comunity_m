@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './lib/auth'
 import { Login } from './pages/Login'
 import { Layout } from './components/Layout'
 import { Social, SocialOAuthReturn } from './pages/social/Social'
-
+import Portfolio from './pages/Portfolio'
 function Protected({ children }: { children: React.ReactNode }) {
   const { token } = useAuth()
   return token ? <>{children}</> : <Navigate to="/login" replace />
@@ -21,6 +21,7 @@ function AppRoutes() {
         <Route path="admin/social" element={<SocialOAuthReturn />} />
         <Route path="*" element={<Navigate to="/social-agent" replace />} />
       </Route>
+      <Route path="/portfolio" element={<Portfolio />} />
     </Routes>
   )
 }
