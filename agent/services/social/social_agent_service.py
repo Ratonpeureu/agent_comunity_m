@@ -122,7 +122,7 @@ async def get_brand(brand_id: str) -> SocialBrand:
 
 _KW = ("a-propos", "about", "fonction", "feature", "tarif", "pricing", "solution", "service", "produit",
        "blog", "contact", "paie", "recrut", "ecole", "nagora")
-_UA = {"User-Agent": "Mozilla/5.0 (compatible; RHManagerBrandBot/1.0; +https://rhmanager.site)"}
+_UA = {"User-Agent": "Mozilla/5.0 (compatible; RHManagerBrandBot/1.0; +https://localhost)"}
 
 
 async def scrape_site(urls: list[str], max_pages: int = 8) -> list[dict]:

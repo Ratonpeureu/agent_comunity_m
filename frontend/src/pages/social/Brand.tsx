@@ -36,7 +36,7 @@ export function Brand() {
         <div className="sm-card"><div className="sm-card-b">
           {b.erreur_analyse && <div className="sm-err">Dernière analyse en erreur : {b.erreur_analyse}</div>}
           <Field label="Site principal" hint="L'agent lit ce site (page d'accueil, sitemap, pages clés) pour comprendre ta marque."><input className="sm-input" value={b.site_url} onChange={e => setB({ ...b, site_url: e.target.value })} /></Field>
-          <Field label="Pages supplémentaires (une URL par ligne)"><textarea className="sm-textarea" value={(b.urls_supplementaires || []).join('\n')} onChange={e => setB({ ...b, urls_supplementaires: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })} placeholder="https://nagora.site\nhttps://rhmanager.site/blog" /></Field>
+          <Field label="Pages supplémentaires (une URL par ligne)"><textarea className="sm-textarea" value={(b.urls_supplementaires || []).join('\n')} onChange={e => setB({ ...b, urls_supplementaires: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })} placeholder="https://nagora.site\nhttps://localhost/blog" /></Field>
           <Field label="Brief manuel" hint="À remplir si ton site est une application web (peu de texte lisible) : décris ta marque, ton offre, ton public.">
             <textarea className="sm-textarea" style={{ minHeight: 150 }} value={b.config.brief_manuel || ''} onChange={e => sec('config', 'brief_manuel', e.target.value)} />
           </Field>

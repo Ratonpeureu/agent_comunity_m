@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 from cryptography.fernet import Fernet
 
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://rhmanager.site").rstrip("/")
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://localhost").rstrip("/")
 OAUTH_BASE = os.getenv("SOCIAL_OAUTH_REDIRECT_BASE", os.getenv("API_BASE", PUBLIC_BASE_URL)).rstrip("/")
 UPLOAD_DIR = "/app/uploads/social"
 try:
